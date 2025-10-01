@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Libra (Library Area)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css"> 
+    <link rel="stylesheet" href="css/auth.css"> <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { 'primary': '#4f46e5', 'secondary': '#10b981' }
+                }
+            }
+        }
+    </script>
+    <script src="js/script.js"></script> 
+    <script>
+        // Konfigurasi Proyek LIBRA (Harus diulang di setiap halaman untuk inisialisasi)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdVYKc6waij3pmxI9dLDSBIgbYiFIRr3A",
+            authDomain: "libra-library-area.firebaseapp.com",
+            databaseURL: "https://libra-library-area-default-rtdb.asia-southeast1.firebasedatabase.app", 
+            projectId: "libra-library-area",
+            storageBucket: "libra-library-area.firebasestorage.app",
+            messagingSenderId: "455509444693",
+            appId: "1:455509444693:web:883766ec8a49032f0b2cdc",
+        };
+        firebase.initializeApp(firebaseConfig);
+        const dbRef = firebase.database().ref(); 
+    </script>
+</head>
+<body id="login-page" class="auth-container">
+    <div class="auth-card">
+        <h2>Selamat Datang di Libra</h2>
+        <p class="text-center text-gray-600 mb-6">Silakan masuk untuk mengakses area perpustakaan Anda.</p>
+        
+        <form id="login-form">
+            <div>
+                <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                <input type="text" id="username" name="username" placeholder="Masukkan Username Anda" required>
+            </div>
+            
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input type="password" id="password" name="password" placeholder="Masukkan Password Anda" required>
+            </div>
+            
+            <button type="submit" class="auth-btn-primary">
+                Login
+            </button>
+        </form>
+        
+        <div class="auth-link-text">
+            <a href="lupa_password.html">Lupa Password?</a>
+        </div>
+        
+        <div class="auth-link-text mt-3">
+            Belum punya akun? <a href="daftar.html">Daftar Sekarang</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,240 @@
+/* Pengaturan Ikon Profil di Header */
+.header-right-menu {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Jarak antara ikon profil dan hamburger */
+}
+
+.profile-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid white;
+    display: flex; /* Untuk menengahkan ikon font-awesome default */
+    justify-content: center;
+    align-items: center;
+    font-size: 2em; /* Ukuran ikon default */
+    color: white; /* Warna ikon default */
+    transition: all 0.2s;
+    background-color: #138496; /* Warna latar belakang default, opsional */
+}
+.profile-icon:hover {
+    border-color: var(--accent-color, #ffc107); /* Menggunakan variabel dari style.css jika tersedia */
+    transform: scale(1.05);
+}
+.profile-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Sidebar Styling */
+.sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 0; /* Default: tertutup */
+    max-width: 280px;
+    height: 100%;
+    background-color: white;
+    box-shadow: -4px 0 15px rgba(0, 0, 0, 0.2);
+    z-index: 2000;
+    transition: width 0.3s ease-in-out;
+    overflow-x: hidden;
+    overflow-y: auto; /* Bisa discroll jika konten panjang */
+}
+
+.sidebar.open {
+    width: 280px; /* Lebar terbuka */
+}
+
+.sidebar-header {
+    text-align: right;
+    padding: 10px 15px 0 15px;
+}
+
+.close-btn {
+    font-size: 2em;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: #333;
+}
+
+.profile-info img {
+    /* w-24 h-24 rounded-full mx-auto border-4 border-white shadow-lg */
+    display: block;
+    width: 96px; 
+    height: 96px;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    padding: 0 15px;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    margin: 5px 0;
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.sidebar-link:hover {
+    background-color: #f4f4f4; /* Menggunakan variabel bg-light */
+    color: var(--primary-color, #17a2b8); 
+}
+
+/* Gaya Khusus Link Login/Logout */
+#sidebar-auth-link {
+    background-color: var(--danger-color, #dc3545); 
+    color: white !important;
+    text-align: center;
+    justify-content: center;
+    margin-top: 20px;
+}
+#sidebar-auth-link:hover {
+    background-color: #a71d2a;
+}
+
+/* Overlay */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1999;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.sidebar-overlay.active {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Sembunyikan fitur login secara default (akan diubah oleh JS) */
+.login-feature {
+    display: none;
+}
+/* css/style.css (Pastikan ini ditambahkan atau dimodifikasi) */
+
+/* Flexbox Order Helper */
+.order-1 { order: 1; }
+.order-2 { order: 2; }
+.order-3 { order: 3; }
+
+/* Desktop View (Di atas 768px) */
+.header {
+    display: flex;
+    justify-content: space-between; 
+    align-items: center;
+    padding: 15px 30px;
+}
+
+.header .logo {
+    order: 1; /* Di desktop, logo di kiri */
+    flex-grow: 0;
+    text-align: left;
+}
+
+.header .nav-menu {
+    order: 2;
+    /* ... styling navigasi desktop ... */
+}
+
+.header .header-right-menu {
+    order: 3;
+}
+
+/* css/profil.css */
+
+/* --- Profile Icon in Header (Modifikasi) --- */
+.header-right-menu {
+    display: flex;
+    align-items: center;
+    gap: 10px; 
+}
+
+.profile-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid white;
+    display: flex; 
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s;
+    background-color: var(--primary, #4f46e5); /* Warna latar belakang untuk ikon default */
+}
+
+.profile-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Display diatur oleh JS/Inline Style */
+}
+
+.profile-icon .default-icon {
+    font-size: 2em;
+    color: white; 
+    display: none; /* Default tersembunyi, hanya terlihat jika JS menampilkannya */
+}
+
+
+/* --- Sidebar Styling (Sudah sesuai dengan kebutuhan) --- */
+.sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 0; 
+    max-width: 280px;
+    height: 100%;
+    background-color: white;
+    box-shadow: -4px 0 15px rgba(0, 0, 0, 0.2);
+    z-index: 2000;
+    transition: width 0.3s ease-in-out;
+    overflow-x: hidden;
+    overflow-y: auto; 
+}
+
+.sidebar.open {
+    width: 280px; 
+}
+
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1999;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.sidebar-overlay.active {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Sembunyikan fitur login secara default */
+.login-feature {
+    display: none;
+}

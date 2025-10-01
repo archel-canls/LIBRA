@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Libra</title>
+    <link rel="stylesheet" href="css/style.css"> 
+    <link rel="stylesheet" href="css/profil.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="js/script.js"></script>
+    <script src="js/profil.js"></script>
+    <script>
+        // Konfigurasi Proyek LIBRA Library Area Anda
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdVYKc6waij3pmxI9dLDSBIgbYiFIRr3A",
+            authDomain: "libra-library-area.firebaseapp.com",
+            databaseURL: "https://libra-library-area-default-rtdb.asia-southeast1.firebasedatabase.app", 
+            projectId: "libra-library-area",
+            storageBucket: "libra-library-area.firebasestorage.app",
+            messagingSenderId: "455509444693",
+            appId: "1:455509444693:web:883766ec8a49032f0b2cdc",
+        };
+        
+        // Inisialisasi Firebase
+        firebase.initializeApp(firebaseConfig);
+        
+        // Referensi utama database
+        const dbRef = firebase.database().ref(); 
+        const booksRef = dbRef.child('books'); // Ref khusus untuk Manajemen Buku
+        
+        console.log("Firebase Realtime Database berhasil diinisialisasi.");
+    </script>
+
+    <style>
+        /* Variabel CSS (Asumsi ada di style.css, diulang untuk keamanan) */
+        :root {
+            --primary-color: #d000b4;
+            --primary-color-light: #e6f2ff;
+            --accent-color: #ffc107;
+            --danger-color: #dc3545;
+        }
+
+        /* CSS Admin Layout */
+        .admin-layout {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 20px auto;
+        }
+        .admin-nav {
+            flex: 0 0 250px;
+            background-color: #ffffff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            height: fit-content;
+        }
+        .admin-nav button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: none;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+        .admin-nav button:hover {
+            background-color: var(--primary-color-light);
+            color: var(--primary-color);
+        }
+        .admin-nav button.active-tab {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        .admin-content {
+            flex-grow: 1;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .admin-card {
+            border: 1px solid #eee;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border-left: 5px solid var(--primary-color);
+        }
+        .btn-action {
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin-left: 5px;
+            font-size: 0.9em;
+        }
+        .btn-action.acc { background-color: #28a745; color: white; border: none; }
+        .btn-action.pinjam { background-color: var(--accent-color); color: white; border: none; }
+        .btn-action.tolak { background-color: var(--danger-color); color: white; border: none; }
+        .btn-action.kembali { background-color: #17a2b8; color: white; border: none; }
+
+        /* CSS Khusus Manajemen Buku (Diadaptasi dari kode sebelumnya) */
+        .container { 
+            max-width: 100%; /* Disesuaikan agar fit di admin-content */
+            padding: 0; 
+            border: none; 
+            box-shadow: none;
+            margin: 0;
+        }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], input[type="number"], textarea, select { 
+            width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; 
+        }
+        input[type="file"] { 
+            border: 1px solid #ddd; padding: 7px; background-color: #f9f9f9; border-radius: 4px; 
+        }
+        button[type="submit"], button[type="button"], #refreshBookListButton { 
+            padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; 
+            transition: background-color 0.2s;
+        }
+        button[type="submit"] { background-color: var(--primary-color); color: white; }
+        button[type="submit"]:hover:not(:disabled) { background-color: #a00080; } /* Warna hover disesuaikan */
+        #refreshBookListButton { 
+            background-color: #007bff; 
+            color: white; 
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        #refreshBookListButton:hover { 
+            background-color: #0056b3; 
+        }
+
+
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; vertical-align: middle; }
+        .action-btns button { padding: 5px 10px; font-size: 0.9em; margin: 2px 0; }
+        .cover-img { width: 50px; height: auto; display: block; margin: auto; } 
+
+        /* Responsif */
+        @media (max-width: 768px) {
+            .admin-layout {
+                flex-direction: column;
+                padding: 10px;
+            }
+            .admin-nav {
+                flex: none;
+                width: 100%;
+                box-shadow: none;
+            }
+            .admin-content {
+                padding: 10px;
+            }
+        }
+    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body id="admin-page">
+    <header class="header">
+        <div class="logo"><a href="admin.html">Libra (Administrator)</a></div>
+        <div class="header-right-menu order-3">
+            <div id="profile-icon" class="profile-icon">
+                <img id="header-profile-img" src="img/default_user.png" alt="Profil">
+                <i class="fas fa-user-circle default-icon"></i> 
+            </div>
+        </div>
+    </header>
+    <br><br><br>
+
+    <div class="admin-layout">
+        
+        <div class="admin-nav">
+            <h2 class="text-xl font-bold text-gray-800 mb-4"><i class="fas fa-cogs mr-2"></i> Kontrol Admin</h2>
+            <hr>
+            
+            <button id="manajemen_pinjam-tab" onclick="showAdminTab('manajemen-pinjam')" class="active-tab text-base font-semibold">
+                <i class="fas fa-list-alt mr-2"></i> Peminjaman & Pengajuan
+            </button>
+            <button id="manajemen_buku-tab" onclick="showAdminTab('manajemen-buku')" class="text-base font-semibold">
+                <i class="fas fa-book mr-2"></i> Manajemen Buku
+            </button>
+            <button id="manajemen_user-tab" onclick="showAdminTab('manajemen-user')" class="text-base font-semibold">
+                <i class="fas fa-users mr-2"></i> Manajemen Anggota
+            </button>
+            <button id="saran_kritik-tab" onclick="showAdminTab('saran-kritik')" class="text-base font-semibold">
+                <i class="fas fa-comments mr-2"></i> Saran & Kritik
+            </button>
+        </div>
+
+        <div class="admin-content">
+            
+            <div id="manajemen-pinjam" class="admin-tab-content">
+                <h2 class="text-2xl font-bold text-gray-700 mb-2">Manajemen Peminjaman Aktif</h2>
+                <p class="text-base font-normal text-gray-600 mb-4">Verifikasi pengajuan, konfirmasi pengambilan, dan pencatatan pengembalian buku fisik.</p>
+                <div id="admin-pinjam-list" style="margin-top: 20px;">
+                    <div class="admin-card">
+                        <p class="text-base font-bold text-gray-800">Memuat...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="manajemen-buku" class="admin-tab-content" style="display: none;">
+                <div class="container">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-2">Manajemen Data Buku</h2>
+                
+                    <form id="bookForm">
+                        <h2 class="text-xl font-semibold text-gray-700 mb-4"><span id="formTitle">Tambah</span> Buku Baru</h2>
+                        <input type="hidden" id="bookKey">
+                
+                        <div class="form-group">
+                            <label for="title" class="text-sm font-semibold">Judul Buku:</label>
+                            <input type="text" id="title" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="author" class="text-sm font-semibold">Penulis:</label>
+                            <input type="text" id="author" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="year" class="text-sm font-semibold">Tahun Terbit:</label>
+                            <input type="number" id="year" required min="1000" max="2100">
+                        </div>
+                        <div class="form-group">
+                            <label for="genre" class="text-sm font-semibold">Genre:</label>
+                            <input type="text" id="genre" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="category" class="text-sm font-semibold">Kategori:</label>
+                            <select id="category" required>
+                                <option value="Fiksi">Fiksi</option>
+                                <option value="Non-Fiksi">Non-Fiksi</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="synopsis" class="text-sm font-semibold">Sinopsis:</label>
+                            <textarea id="synopsis" rows="4" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="type" class="text-sm font-semibold">Tipe (Fisik/Ebook):</label>
+                            <select id="type" required>
+                                <option value="Buku Fisik">Buku Fisik</option>
+                                <option value="Ebook">Ebook</option>
+                                <option value="Fisik & Ebook">Fisik & Ebook</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="stockMax" class="text-sm font-semibold">Stok Maksimal (Untuk Fisik):</label>
+                            <input type="number" id="stockMax" min="0" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="ebookFile" class="text-sm font-semibold">Ebook File (.pdf - <strong class="font-extrabold">wajib untuk Ebook</strong>):</label>
+                            <input type="file" id="ebookFile" accept=".pdf">
+                            <small id="currentEbookStatus" style="display: none; color: #28a745; margin-top: 5px;">Status Ebook: Data Base64 Tersimpan</small>
+                            <input type="hidden" id="ebookData" value=""> 
+                        </div>
+                
+                        <div class="form-group">
+                            <label for="coverFile" class="text-sm font-semibold">Cover File (.jpg, .png, .jpeg):</label>
+                            <input type="file" id="coverFile" accept=".jpg, .jpeg, .png"> 
+                            <small id="currentCoverStatus" style="display: none; color: #28a745; margin-top: 5px;">Status Cover: Data Base64 Tersimpan</small>
+                            <input type="hidden" id="coverData" value="">
+                        </div>
+                        
+                        <button type="submit" id="submitButton" class="text-base font-semibold">Tambah Buku</button>
+                        <button type="button" id="cancelEditButton" style="display: none;" class="text-base font-semibold bg-gray-500 hover:bg-gray-600">Batal</button>
+                    </form>
+                
+                    <hr style="margin: 40px 0;">
+                
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4">Daftar Buku Tersimpan</h2>
+                    <button id="refreshBookListButton" type="button" onclick="refreshBookList()" class="text-base font-semibold">
+                        <i class="fas fa-sync-alt" style="margin-right: 5px;"></i> Refresh Daftar Buku
+                    </button>
+
+                    <div id="bookListContainer">
+                        <table>
+                            <thead>
+                                <tr class="text-sm font-bold">
+                                    <th>ID Buku</th>
+                                    <th>Cover</th>
+                                    <th>Judul</th>
+                                    <th>Penulis</th>
+                                    <th>Tahun</th>
+                                    <th>Stok (Max)</th>
+                                    <th>Tipe</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="booksTableBody" class="text-sm font-normal">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="manajemen-user" class="admin-tab-content" style="display: none;">
+                <h2 class="text-2xl font-bold text-gray-700 mb-2">Manajemen Akun Anggota</h2>
+                <p class="text-base font-normal text-gray-600 mb-4">Lihat daftar anggota dan kelola akun mereka.</p>
+                <div id="admin-user-list" style="margin-top: 20px;">
+                    <div class="admin-card">
+                        <p class="text-base font-bold text-gray-800">Fitur Manajemen Anggota belum diimplementasikan sepenuhnya.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="saran-kritik" class="admin-tab-content" style="display: none;">
+                <h2 class="text-2xl font-bold text-gray-700 mb-2">Saran & Kritik Masuk</h2>
+                <p class="text-base font-normal text-gray-600 mb-4">Tinjau semua masukan dari pengguna.</p>
+                <div id="admin-saran-list" style="margin-top: 20px;">
+                    <div class="admin-card">
+                        <p class="text-base font-bold text-gray-800">Fitur Saran & Kritik belum diimplementasikan sepenuhnya.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="profile-sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <button id="close-sidebar" class="close-btn">&times;</button>
+        </div>
+        <div class="profile-info text-center p-4">
+            <img id="sidebar-profile-img" src="img/default_user.png" alt="Foto Profil" class="w-24 h-24 rounded-full mx-auto border-4 border-white shadow-lg">
+            <h3 id="sidebar-username" class="mt-3 text-xl font-semibold">Pengunjung</h3>
+        </div>
+        
+        <nav class="sidebar-nav pt-4">
+            <a href="#" class="sidebar-link login-feature" id="link-edit-profile-photo">
+                <i class="fas fa-camera mr-3"></i> Edit Foto Profil
+            </a>
+            
+            <a href="reset_password.html" class="sidebar-link login-feature" id="link-reset-password">
+                <i class="fas fa-key mr-3"></i> Reset Password
+            </a>
+            
+            <hr class="my-4 border-gray-200 login-feature">
+            
+            <a href="login.html" class="sidebar-link logout-link" id="sidebar-auth-link">
+                <i class="fas fa-sign-in-alt mr-3" id="auth-icon"></i> <span id="auth-text">Login/Daftar</span>
+            </a>
+        </nav>
+    </div>
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <div id="edit-photo-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden z-[1000]">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm mx-4">
+            <h3 class="text-xl font-bold mb-4">Ubah Foto Profil</h3>
+            <form id="edit-photo-form">
+                <input type="file" id="modal-foto-upload" accept="image/*" required class="w-full mb-4 p-2 border rounded">
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="close-modal" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded hover:bg-indigo-700">Simpan Foto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+        // --- LOGIKA UTAMA TABS ADMIN ---
+        function showAdminTab(tabId) {
+            // Sembunyikan semua konten tab
+            document.querySelectorAll('.admin-tab-content').forEach(tab => {
+                tab.style.display = 'none';
+            });
+
+            // Hapus class aktif dari semua tombol navigasi
+            document.querySelectorAll('.admin-nav button').forEach(btn => {
+                btn.classList.remove('active-tab');
+            });
+
+            // Tampilkan tab yang dipilih
+            document.getElementById(tabId).style.display = 'block';
+            
+            // Set tombol navigasi yang dipilih menjadi aktif
+            document.getElementById(tabId.replace('-', '_') + '-tab').classList.add('active-tab');
+
+            // Khusus untuk tab manajemen buku, muat ulang daftar buku
+            if (tabId === 'manajemen-buku') {
+                renderBookList();
+            }
+        }
+        
+        // Atur tab default saat dimuat
+        document.addEventListener('DOMContentLoaded', () => {
+            showAdminTab('manajemen-pinjam'); // Default aktif
+        });
+
+
+        // --- LOGIKA MANAJEMEN BUKU (CRUD + Base64) ---
+
+        // Variabel DOM Khusus Buku
+        const bookForm = document.getElementById('bookForm');
+        const booksTableBody = document.getElementById('booksTableBody');
+        const formTitle = document.getElementById('formTitle');
+        const submitButton = document.getElementById('submitButton');
+        const cancelEditButton = document.getElementById('cancelEditButton');
+        
+        const bookKeyInput = document.getElementById('bookKey');
+        const titleInput = document.getElementById('title');
+        const authorInput = document.getElementById('author');
+        const yearInput = document.getElementById('year');
+        const genreInput = document.getElementById('genre');
+        const categoryInput = document.getElementById('category');
+        const synopsisInput = document.getElementById('synopsis');
+        const typeInput = document.getElementById('type');
+        const stockMaxInput = document.getElementById('stockMax');
+        
+        const ebookFileInput = document.getElementById('ebookFile');
+        const coverFileInput = document.getElementById('coverFile');
+        const ebookDataHidden = document.getElementById('ebookData');
+        const coverDataHidden = document.getElementById('coverData');
+        const currentEbookStatusEl = document.getElementById('currentEbookStatus');
+        const currentCoverStatusEl = document.getElementById('currentCoverStatus');
+
+
+        // UTILITY: Mengubah snapshot Firebase menjadi Array objek dengan key
+        // KEY yang digunakan adalah ID Angka
+        const snapshotToArrayWithKey = snapshot => {
+            const arr = [];
+            snapshot.forEach(childSnapshot => {
+                // Memastikan key adalah angka
+                if (!isNaN(parseInt(childSnapshot.key))) { 
+                    const item = childSnapshot.val();
+                    item.key = parseInt(childSnapshot.key); // Simpan sebagai angka
+                    arr.push(item);
+                }
+            });
+            // Urutkan berdasarkan ID angka
+            arr.sort((a, b) => a.key - b.key); 
+            return arr;
+        };
+
+        // FUNGSI BASE64: Mengkonversi File menjadi string Base64.
+        function convertFileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                if (!file) {
+                    resolve(null);
+                    return;
+                }
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+        
+        // FUNGSI BARU: Mendapatkan ID Buku Angka Selanjutnya
+        async function getNextBookId() {
+            try {
+                // Ambil semua data buku
+                const snapshot = await booksRef.once('value');
+                let maxId = 0;
+
+                snapshot.forEach(childSnapshot => {
+                    const key = parseInt(childSnapshot.key);
+                    // Hanya pertimbangkan key yang berupa angka
+                    if (!isNaN(key)) {
+                        if (key > maxId) {
+                            maxId = key;
+                        }
+                    }
+                });
+                
+                return maxId + 1;
+            } catch (error) {
+                console.error("Error getting next book ID:", error);
+                // Fallback jika gagal, mulai dari 1
+                return 1; 
+            }
+        }
+
+
+        // 1. Render Daftar Buku
+        async function renderBookList() {
+            // Tampilkan pesan loading
+            booksTableBody.innerHTML = '<tr><td colspan="8" class="text-center" style="color:#007bff;">Memuat data buku...</td></tr>';
+            try {
+                const snapshot = await booksRef.once('value');
+                const books = snapshotToArrayWithKey(snapshot); // Menggunakan fungsi yang diurutkan
+                
+                booksTableBody.innerHTML = ''; // Hapus pesan loading
+
+                if (books.length === 0) {
+                    booksTableBody.innerHTML = '<tr><td colspan="8" class="text-center">Belum ada data buku.</td></tr>'; 
+                    return;
+                }
+
+                books.forEach(book => {
+                    const row = booksTableBody.insertRow();
+                    
+                    const coverHtml = book.cover 
+                        ? `<img src="${book.cover}" alt="Cover ${book.title}" class="cover-img">`
+                        : `N/A`;
+                    // book.key sekarang adalah ID angka
+                    row.innerHTML = `
+                        <td>${book.key}</td>
+                        <td class="text-center">${coverHtml}</td> 
+                        <td>${book.title}</td>
+                        <td>${book.author}</td>
+                        <td>${book.year}</td>
+                        <td>${book.stock || 0} (${book.stockMax})</td>
+                        <td>${book.type}</td>
+                        <td class="action-btns">
+                            <button onclick="editBook('${book.key}')" style="background-color: #28a745;">Edit</button>
+                            <button onclick="deleteBook('${book.key}', '${book.title}')" style="background-color: #dc3545;">Hapus</button>
+                        </td>
+                    `;
+                });
+            } catch (error) {
+                console.error("Error fetching data from Firebase:", error);
+                booksTableBody.innerHTML = '<tr><td colspan="8" class="text-center" style="color:#dc3545;">Gagal memuat data.</td></tr>';
+            }
+        }
+
+        /**
+         * FUNGSI BARU: Fungsi untuk Refresh Daftar Buku
+         */
+        async function refreshBookList() {
+             const refreshButton = document.getElementById('refreshBookListButton');
+             refreshButton.disabled = true;
+             refreshButton.innerHTML = `<i class="fas fa-spinner fa-spin" style="margin-right: 5px;"></i> Memuat Ulang...`;
+             
+             try {
+                 await renderBookList(); // Panggil fungsi render yang akan memuat data dari Firebase
+                 alert('Daftar buku berhasil dimuat ulang!');
+             } catch (error) {
+                 console.error('Refresh gagal:', error);
+                 alert('Gagal memuat ulang daftar buku.');
+             } finally {
+                 refreshButton.disabled = false;
+                 refreshButton.innerHTML = `<i class="fas fa-sync-alt" style="margin-right: 5px;"></i> Refresh Daftar Buku`;
+             }
+        }
+
+
+        // 2. Tambah dan Edit Buku (Submit Form)
+        bookForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const bookKey = bookKeyInput.value;
+            const isEditing = !!bookKey;
+            
+            submitButton.disabled = true;
+            submitButton.textContent = isEditing ? 'Menyimpan...' : 'Menambahkan...';
+
+            let coverBase64 = coverDataHidden.value; 
+            let ebookBase64 = ebookDataHidden.value; 
+
+            // Validasi Cover
+            if (!isEditing && coverFileInput.files.length === 0) {
+                alert("Cover file wajib diunggah untuk buku baru.");
+                submitButton.disabled = false;
+                submitButton.textContent = 'Tambah Buku';
+                return;
+            }
+            if (isEditing && coverFileInput.files.length === 0 && !coverBase64) {
+                alert("Cover file wajib ada. Silakan unggah cover baru atau pastikan cover lama sudah tersimpan.");
+                submitButton.disabled = false;
+                submitButton.textContent = 'Simpan Perubahan';
+                return;
+            }
+
+            try {
+                // Proses File Baru
+                if (coverFileInput.files.length > 0) {
+                    coverBase64 = await convertFileToBase64(coverFileInput.files[0]);
+                }
+                if (ebookFileInput.files.length > 0) {
+                    ebookBase64 = await convertFileToBase64(ebookFileInput.files[0]);
+                } 
+
+            } catch (error) {
+                alert("Gagal mengkonversi file. Silakan coba lagi.");
+                console.error("Base64 Conversion Error:", error);
+                submitButton.disabled = false;
+                submitButton.textContent = isEditing ? 'Simpan Perubahan' : 'Tambah Buku';
+                return;
+            }
+            
+            // Ambil stok lama jika sedang edit
+            let currentStock = parseInt(stockMaxInput.value);
+            if(isEditing){
+                try {
+                    const snapshot = await booksRef.child(bookKey).once('value');
+                    if(snapshot.exists()) {
+                        const existingBook = snapshot.val();
+                        // Pertahankan stok yang sudah ada, kecuali stok max diubah
+                        currentStock = existingBook.stock || 0; 
+                        // Jika stockMax diubah, kita perlu memastikan stok saat ini tidak melebihi stokMax baru.
+                        if(existingBook.stockMax !== parseInt(stockMaxInput.value)){
+                            currentStock = Math.min(currentStock, parseInt(stockMaxInput.value));
+                        }
+                    }
+                } catch(e) {
+                    console.warn("Gagal mengambil stok lama, menggunakan stokMax sebagai default.");
+                }
+            }
+
+
+            const bookData = {
+                title: titleInput.value,
+                author: authorInput.value,
+                year: parseInt(yearInput.value),
+                genre: genreInput.value,
+                category: categoryInput.value,
+                synopsis: synopsisInput.value,
+                type: typeInput.value,
+                stockMax: parseInt(stockMaxInput.value),
+                stock: isEditing ? currentStock : parseInt(stockMaxInput.value), 
+                ebookPath: ebookBase64, 
+                cover: coverBase64,
+                // Tambahkan properti 'id' sebagai placeholder.
+                id: null, 
+            };
+
+            try {
+                let targetKey = bookKey;
+                if (isEditing) {
+                    // MODE EDIT: Gunakan key yang ada sebagai ID
+                    bookData.id = parseInt(targetKey);
+                    
+                    // Update menggunakan key yang sudah ada (ID angka)
+                    await booksRef.child(targetKey).update(bookData);
+                    alert(`Buku ID ${targetKey} ("${bookData.title}") berhasil diupdate!`);
+                } else {
+                    // MODE TAMBAH BARU: Mendapatkan ID angka baru
+                    targetKey = await getNextBookId();
+                    bookData.id = targetKey; // Set ID objek = ID key
+                    
+                    // Set data menggunakan ID angka sebagai key
+                    await booksRef.child(targetKey).set(bookData); 
+                    alert(`Buku baru ID ${targetKey} ("${bookData.title}") berhasil ditambahkan!`);
+                }
+
+                resetForm();
+                await renderBookList();
+            } catch (error) {
+                console.error("Error saving book:", error);
+                alert("Gagal menyimpan data buku ke Firebase.");
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = isEditing ? 'Simpan Perubahan' : 'Tambah Buku';
+            }
+        });
+
+        // 3. Memuat Data ke Form Edit
+        async function editBook(key) {
+            // Key sekarang adalah ID angka, jadi tidak perlu diubah
+            try {
+                const snapshot = await booksRef.child(key).once('value');
+                const book = snapshot.val();
+
+                if (book) {
+                    bookKeyInput.value = key; 
+                    titleInput.value = book.title;
+                    authorInput.value = book.author;
+                    yearInput.value = book.year;
+                    genreInput.value = book.genre;
+                    categoryInput.value = book.category;
+                    synopsisInput.value = book.synopsis;
+                    typeInput.value = book.type;
+                    stockMaxInput.value = book.stockMax;
+                    
+                    ebookDataHidden.value = book.ebookPath || '';
+                    coverDataHidden.value = book.cover || '';
+                    
+                    currentEbookStatusEl.style.display = book.ebookPath ? 'block' : 'none';
+                    currentCoverStatusEl.style.display = book.cover ? 'block' : 'none';
+                    
+                    ebookFileInput.value = '';
+                    coverFileInput.value = '';
+
+                    formTitle.textContent = 'Edit';
+                    submitButton.textContent = 'Simpan Perubahan';
+                    cancelEditButton.style.display = 'inline-block';
+                    showAdminTab('manajemen-buku'); 
+                    window.scrollTo(0, 0); 
+                } else {
+                    alert('Buku tidak ditemukan.');
+                }
+            } catch(error) {
+                console.error("Error loading book for edit:", error);
+                alert('Gagal memuat data buku untuk diedit.');
+            }
+        }
+        
+        // 4. Hapus Buku
+        async function deleteBook(key, title) {
+            if (!confirm(`Apakah Anda yakin ingin menghapus buku "${title}" (ID: ${key})? Aksi ini tidak bisa dibatalkan.`)) {
+                return;
+            }
+
+            try {
+                // Hapus berdasarkan key angka
+                await booksRef.child(key).remove();
+                alert(`Buku ID ${key} ("${title}") berhasil dihapus.`);
+                await renderBookList();
+            } catch (error) {
+                console.error("Error deleting book:", error);
+                alert("Gagal menghapus data buku.");
+            }
+        }
+        
+        // 5. Reset Form
+        function resetForm() {
+            bookForm.reset();
+            bookKeyInput.value = '';
+            ebookDataHidden.value = '';
+            coverDataHidden.value = '';
+            formTitle.textContent = 'Tambah';
+            submitButton.textContent = 'Tambah Buku';
+            cancelEditButton.style.display = 'none';
+            currentEbookStatusEl.style.display = 'none';
+            currentCoverStatusEl.style.display = 'none';
+        }
+
+        // Listener tombol Batal Edit
+        cancelEditButton.addEventListener('click', resetForm);
+
+        // --- INISIALISASI AKHIR ---
+        document.addEventListener('DOMContentLoaded', () => {
+             // Expose functions ke global scope
+             window.editBook = editBook;
+             window.deleteBook = deleteBook;
+             window.showAdminTab = showAdminTab;
+             window.refreshBookList = refreshBookList; // Expose fungsi refresh baru
+             
+             // Muat daftar buku saat tab manajemen buku dibuka pertama kali
+             if(document.getElementById('manajemen-buku').style.display === 'block') {
+                 renderBookList();
+             }
+        });
+        
+    </script>
+    </body>
+</html>
