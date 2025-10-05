@@ -68,7 +68,7 @@
 
         <section id="beranda-ebook" class="tab-content">
             <div class="search-section">
-                <input type="text" id="search-input" placeholder="Cari dan baca buku secara online...">
+                <input type="text" id="search-input" placeholder="Cari dan baca buku 0nline...">
                 <button id="search-button">Cari</button>
             </div>
             <div class="book-list" id="book-list-container">
@@ -122,24 +122,28 @@
         </div>
     </div>
     <script src="js/script.js"></script>
-    <script>
-        // JS untuk fungsionalitas Tab (Hanya di halaman ini)
-        function showEbookTab(id) {
-            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-            document.getElementById(id).style.display = 'block';
-            
-            // Panggil fungsi render yang sesuai
-            if (id === 'beranda-ebook') {
-                renderBookList('ebook-page');
-            } else if (id === 'history-ebook') {
-                renderTransactionHistory('ebook');
-            }
-        }
-        document.addEventListener('DOMContentLoaded', () => {
-            // Inisialisasi: Tampilkan Koleksi Ebook dan render list buku
-            showEbookTab('beranda-ebook'); 
+<script>
+    // JS untuk fungsionalitas Tab (Hanya di halaman ini)
+    function showEbookTab(id) {
+        // ... (Logika menyembunyikan/menampilkan tab yang sudah ada)
+        document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+        document.getElementById(id).style.display = 'block';
+        
+        // Panggil fungsi render yang sesuai
+        if (id === 'beranda-ebook') {
+            // Asumsi: renderBookList dan handleSearch ada di js/script.js
+            renderBookList('ebook-page'); 
             handleSearch('ebook-page');
-        });
-    </script>
+        } else if (id === 'history-ebook') {
+            renderEbookHistory(); // Panggil fungsi baru
+        }
+
+        // Opsional: Perbarui styling tombol tab (misalnya dengan class 'active')
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+        // Inisialisasi: Tampilkan Koleksi Ebook dan render list buku
+        showEbookTab('beranda-ebook'); 
+    });
+</script>
 </body>
 </html>

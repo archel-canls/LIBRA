@@ -175,7 +175,8 @@ Book Card Styling (Responsif Grid) - MODIFIKASI BERAT
     /* Lebar kolom default: 170px */
     grid-template-columns: repeat(auto-fit, 170px); 
     gap: 20px;
-    justify-content: center; 
+    justify-content: center;
+    text-align: center;
 }
 
 .book-card {
@@ -271,7 +272,7 @@ Cover Styling - MODIFIKASI
 /* Media Query untuk Layar Lebar */
 @media (min-width: 1200px) {
     .book-list {
-        grid-template-columns: repeat(5, 170px); 
+  
         justify-content: center; 
     }
 }

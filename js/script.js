@@ -402,8 +402,6 @@ async function renderBookList(page, filter = {}) {
         const data = await getAllData(); 
         let books = data.books;
         const user = getLoggedInUser();
-
-        // 1. Pemfilteran berdasarkan Halaman Awal (Pinjam, Ebook, Bookmark)
         if (page === 'pinjam-page') {
             books = books.filter(b => b.type.includes('Fisik') && b.stock > 0);
         } else if (page === 'ebook-page') {
@@ -434,7 +432,6 @@ async function renderBookList(page, filter = {}) {
                     }
                 } 
                 else if (filterType === 'kategori') {
-                    // Konversi data buku (spasi/hyphen) agar sesuai dengan tag value (underscore)
                     const bookCategoryFormatted = book.category
                                                         .toLowerCase()
                                                         .replace(/[-\s]/g, '_'); 
@@ -446,7 +443,7 @@ async function renderBookList(page, filter = {}) {
                     }
                 } 
                 else if (filterType === 'genre') {
-                    // Filter Genre 
+                
                     return book.genre.toLowerCase().includes(tag); 
                 }
                 
@@ -454,13 +451,10 @@ async function renderBookList(page, filter = {}) {
             });
         }
         
-        // 3. Pemfilteran Teks Pencarian
-        // Filter ini diterapkan pada hasil yang sudah difilter oleh tag di langkah 2.
-        books = books.filter(book => {
+       books = books.filter(book => {
             const search = (filter.search || '').toLowerCase();
             if (!search) return true; // Lewati filter jika tidak ada teks pencarian
 
-            // Cek kecocokan di judul, penulis, genre, kategori, jenis, atau tahun
             return book.title.toLowerCase().includes(search) || 
                    book.author.toLowerCase().includes(search) ||
                    book.genre.toLowerCase().includes(search) ||
@@ -469,7 +463,6 @@ async function renderBookList(page, filter = {}) {
                    String(book.year).includes(search);
         });
 
-        // Tampilkan hasil
         listContainer.innerHTML = ''; 
 
         if (books.length === 0) {
@@ -482,7 +475,7 @@ async function renderBookList(page, filter = {}) {
             card.className = 'book-card';
             card.onclick = () => window.location.href = `buka_buku.html?id=${book.id}`;
             const coverSrc = book.cover && book.cover.startsWith('data:image') ? book.cover : (book.cover || 'img/default.jpg');
-            
+
             card.innerHTML = `
                 <img src="${coverSrc}" alt="Cover ${book.title}" onerror="this.onerror=null; this.src='img/default.jpg';">
                 <div class="book-info">
@@ -498,10 +491,7 @@ async function renderBookList(page, filter = {}) {
         listContainer.innerHTML = `<p style="text-align: center; padding: 20px; color: var(--danger-color);">Gagal memuat daftar buku: ${error.message}</p>`;
     }
 }
-
-// --- FUNGSI PENGHUBUNG FILTER TAG (Dipanggil saat klik filter utama atau tag) ---
 const filterBookList = (type, value) => {
-    // Ambil nilai pencarian teks saat ini
     const searchInput = document.getElementById('search-input').value;
     renderBookList(document.body.id, {
         search: searchInput,
@@ -510,19 +500,15 @@ const filterBookList = (type, value) => {
     });
 };
 
-
-// --- FUNGSI PENCARIAN ---
 function handleSearch(page) { 
     const searchInput = document.getElementById('search-input');
     const searchButton = document.getElementById('search-button');
 
     if (searchInput && searchButton) {
         const performSearch = () => {
-            // Ambil variabel global filter tag yang sedang aktif dari HTML
             const currentType = window.currentFilterType || 'all'; 
             const activeVal = window.activeTag || null;
             
-            // Panggil renderBookList dengan teks pencarian DAN filter tag yang aktif
             renderBookList(page, { 
                 search: searchInput.value,
                 filterType: currentType, 
@@ -538,7 +524,7 @@ function handleSearch(page) {
         window.addEventListener('load', () => renderBookList(page, {}));
     }
 }
-// --- LOGIKA HALAMAN DETAIL BUKU (`buka_buku.html`) ---
+// --- LOGIKA HALAMAN DETAIL BUKU (buka_buku.html) ---
 async function renderBookDetail() { 
     const urlParams = new URLSearchParams(window.location.search);
     const bookId = parseInt(urlParams.get('id'));
@@ -693,87 +679,208 @@ async function handlePengajuanPinjam() {
     }
 }
 
+// ... (Logika yang sudah ada: getLoggedInUser, getAllData, setDatabaseData, dll.)
+
+// Variabel global untuk menyimpan data state ebook
+let currentBookId = null;
+let currentPage = 1;
+let currentBookTitle = '';
+let actualEbookPath = '';
+let maxPages = 100; // ASUMSI jumlah maksimal halaman default (tidak bisa didapatkan dari PDF Viewer)
+
+/**
+ * Menyimpan progress baca ke Firebase Realtime Database.
+ */
+async function saveEbookProgress(bookId, title, page) {
+    const user = getLoggedInUser();
+    if (!user) return; // Tidak menyimpan jika belum login
+
+    try {
+        const data = await getAllData();
+        const historyData = { 
+            userId: user.id, 
+            bookId: bookId, 
+            bookTitle: title, 
+            lastPage: page, 
+            lastAccessDate: new Date().toISOString() 
+        };
+        
+        let currentHistory = data.ebookHistory.find(eh => eh.userId === user.id && eh.bookId === bookId);
+
+        if (currentHistory) {
+            // Update existing history
+            Object.assign(currentHistory, historyData);
+        } else {
+            // Add new history
+            data.ebookHistory.push(historyData);
+        }
+        
+        await setDatabaseData('ebookHistory', data.ebookHistory);
+        console.log(`Progress disimpan: Halaman ${page} untuk buku ID ${bookId}.`);
+        
+    } catch (error) {
+        console.error('Gagal menyimpan progress:', error);
+    }
+}
+
+/**
+ * Mengubah halaman ebook dan memperbarui tampilan/progress.
+ * @param {number} delta - Jumlah perubahan halaman (+1 atau -1).
+ */
+function changePage(delta) {
+    let newPage = currentPage + delta;
+
+    if (newPage < 1) {
+        newPage = 1;
+    } else if (newPage > maxPages) { // Pembatasan berdasarkan asumsi maxPages
+        alert('Anda telah mencapai akhir simulasi buku.');
+        newPage = maxPages;
+    }
+    
+    // Hanya lakukan perubahan jika halaman berbeda
+    if (newPage !== currentPage) {
+        currentPage = newPage;
+        
+        // 1. Update iframe src
+        const pdfViewer = document.getElementById('pdf-viewer');
+        // Buat URL baru tanpa menyebabkan reload iframe, hanya ganti fragmen #page
+        pdfViewer.src = `${actualEbookPath}#page=${currentPage}`; 
+
+        // 2. Update info halaman di UI
+        document.getElementById('current-page-info').textContent = `Halaman: ${currentPage}`;
+        
+        // 3. Update status tombol
+        document.getElementById('btn-prev-page').disabled = (currentPage <= 1);
+        document.getElementById('btn-next-page').disabled = (currentPage >= maxPages); // Non-aktifkan jika mencapai batas asumsi
+
+        // 4. Simpan progress otomatis (History)
+        saveEbookProgress(currentBookId, currentBookTitle, currentPage);
+    }
+}
+
 // --- LOGIKA HALAMAN BACA BUKU (`baca_buku.html`) ---
 async function renderEbookReader() {
     const user = getLoggedInUser();
-    if (!user) { window.location.href = 'login.html'; return; }
+    if (!user) { 
+        alert('Harap login untuk membaca Ebook.');
+        window.location.href = 'login.html'; 
+        return; 
+    }
 
     const urlParams = new URLSearchParams(window.location.search);
     const bookId = parseInt(urlParams.get('id'));
+    const initialPageParam = parseInt(urlParams.get('page')); 
     
     try {
         const data = await getAllData(); 
-        const history = data.ebookHistory.find(eh => eh.userId === user.id && eh.bookId === bookId);
-        const initialPage = (history && history.lastPage) || 1; 
         const book = data.books.find(b => b.id === bookId);
         
         if (!book || !book.ebookPath) {
             document.querySelector('.container').innerHTML = '<h2>Ebook tidak ditemukan atau tidak tersedia!</h2>';
             return;
         }
+
+        // Simpan data buku ke variabel global
+        currentBookId = bookId;
+        currentBookTitle = book.title;
+        
+        const history = data.ebookHistory.find(eh => eh.userId === user.id && eh.bookId === bookId);
+        
+        // Tentukan halaman awal: dari URL (dari history), dari history terakhir, atau 1
+        currentPage = initialPageParam || (history && history.lastPage) || 1; 
         
         document.getElementById('ebook-title').textContent = book.title;
+        document.getElementById('page-title').textContent = `Baca ${book.title} | Libra`;
         const readerContainer = document.getElementById('ebook-reader-container');
         
-        let actualEbookPath = book.ebookPath;
-        // Simulasi jika pathnya data:image atau bukan PDF, ganti ke sample.pdf
-        if (book.ebookPath && !book.ebookPath.toLowerCase().includes('.pdf')) {
+        // Tentukan path ebook
+        actualEbookPath = book.ebookPath;
+        if (!actualEbookPath || (!actualEbookPath.toLowerCase().includes('.pdf') && !actualEbookPath.startsWith('data:'))) {
              actualEbookPath = 'assets/sample1.pdf'; 
         }
 
+        // Tampilkan PDF Viewer
         readerContainer.innerHTML = `
             <iframe 
                 id="pdf-viewer" 
-                src="${actualEbookPath}#page=${initialPage}" 
+                src="${actualEbookPath}#page=${currentPage}" 
                 width="100%" 
-                height="600px" 
+                height="80vh" 
                 style="border: 1px solid #ddd; border-radius: 5px;"
                 title="Ebook Reader: ${book.title}"
             ></iframe>
-            <p style="text-align: center; margin-top: 10px; color: #555;">**Catatan:** Dalam simulasi, gunakan tombol simpan progress di bawah untuk mencatat halaman terakhir.</p>
         `;
-
-        document.getElementById('last-read-info').innerHTML = `Terakhir dibaca di halaman: <strong>${initialPage}</strong>.`;
         
-        const saveProgressBtn = document.createElement('button');
-        saveProgressBtn.className = 'btn-primary';
-        saveProgressBtn.textContent = 'Simpan Progress (Simulasi Halaman +5)';
-        saveProgressBtn.style.margin = '10px auto';
-        saveProgressBtn.style.display = 'block';
+        // Update status UI
+        document.getElementById('current-page-info').textContent = `Halaman: ${currentPage}`;
+        document.getElementById('btn-prev-page').disabled = (currentPage <= 1);
+        // maxPages tidak bisa didapatkan, jadi tombol next akan selalu aktif kecuali kita tetapkan batasan
+        
+        // Pasang event listener untuk tombol navigasi
+        document.getElementById('btn-next-page').onclick = () => changePage(1);
+        document.getElementById('btn-prev-page').onclick = () => changePage(-1);
 
-        saveProgressBtn.onclick = async () => { 
-            try {
-                const newData = await getAllData();
-                let currentHistory = newData.ebookHistory.find(eh => eh.userId === user.id && eh.bookId === bookId);
-                
-                const lastPage = currentHistory ? currentHistory.lastPage : 1;
-                const newPage = lastPage + 5; 
-                
-                if (currentHistory) {
-                    currentHistory.lastPage = newPage;
-                    currentHistory.lastAccessDate = new Date().toISOString();
-                } else {
-                    newData.ebookHistory.push({ userId: user.id, bookId: book.id, lastPage: newPage, lastAccessDate: new Date().toISOString() });
-                }
-                
-                await setDatabaseData('ebookHistory', newData.ebookHistory);
-                
-                document.getElementById('pdf-viewer').src = `${actualEbookPath}#page=${newPage}`;
-                document.getElementById('last-read-info').innerHTML = `Progress disimpan: Halaman <strong>${newPage}</strong>.`;
-                alert(`Progress berhasil disimpan ke Halaman ${newPage}!`);
-            } catch (error) {
-                alert(error.message || 'Gagal menyimpan progress.');
-            }
-        };
+        // Simpan progress awal saat buku dibuka (jika ini pertama kali atau dari history)
+        if (!history || initialPageParam) {
+            saveEbookProgress(currentBookId, currentBookTitle, currentPage);
+        }
 
-        readerContainer.parentNode.insertBefore(saveProgressBtn, readerContainer.nextSibling);
     } catch (error) {
         document.querySelector('.container').innerHTML = `<h2>Gagal memuat ebook: ${error.message}</h2>`;
     }
 }
+// --- LOGIKA HISTORY EBOOK (`ebook.html`) ---
+async function renderEbookHistory() {
+    const user = getLoggedInUser();
+    const historyListContainer = document.getElementById('ebook-history-list');
+    historyListContainer.innerHTML = ''; // Bersihkan kontainer
 
+    if (!user) {
+        historyListContainer.innerHTML = '<p class="text-red-500">Silakan login untuk melihat riwayat baca Anda.</p>';
+        return;
+    }
 
-// --- LOGIKA STATUS & HISTORY PINJAM/EBOOK ---
+    try {
+        const data = await getAllData();
+        const userHistory = data.ebookHistory
+            .filter(eh => eh.userId === user.id)
+            .sort((a, b) => new Date(b.lastAccessDate) - new Date(a.lastAccessDate)); // Urutkan terbaru
+
+        if (userHistory.length === 0) {
+            historyListContainer.innerHTML = '<p class="text-gray-500">Anda belum pernah membaca ebook.</p>';
+            return;
+        }
+
+        userHistory.forEach(history => {
+            const date = new Date(history.lastAccessDate).toLocaleDateString('id-ID', {
+                year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+            
+            // Tentukan URL untuk lanjut membaca
+            const readUrl = `baca_buku.html?id=${history.bookId}&page=${history.lastPage}`;
+
+            const historyItem = document.createElement('a'); // Ganti div menjadi <a>
+            historyItem.href = readUrl; // Seluruh elemen menjadi tautan
+            historyItem.className = 'history-item p-4 mb-3 border-b border-gray-200 block hover:bg-indigo-50 transition duration-150 ease-in-out cursor-pointer rounded-lg'; // Menambahkan class block dan style hover baru
+            
+            historyItem.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-lg font-semibold text-gray-800">
+                            ${history.bookTitle || 'Judul Buku Tidak Diketahui'}
+                        </p>
+                        <p class="text-gray-600 mt-1">Terakhir dibaca: <span class="font-bold text-primary">Halaman ${history.lastPage}</span></p>
+                        <p class="text-sm text-gray-400">Akses terakhir: ${date}</p>
+                    </div>
+                    <i class="fas fa-book-reader text-2xl text-primary"></i> </div>
+            `;
+            historyListContainer.appendChild(historyItem);
+        });
+
+    } catch (error) {
+        historyListContainer.innerHTML = `<p class="text-red-500">Gagal memuat riwayat: ${error.message}</p>`;
+    }
+}// --- LOGIKA STATUS & HISTORY PINJAM/EBOOK ---
 async function renderTransactionStatus(type) { 
     const user = getLoggedInUser();
     const container = document.getElementById(`${type}-status-list`);
@@ -1068,9 +1175,9 @@ window.handleAdminAction = async (transId, action) => {
             if (book.stock <= 0) { alert('Stok tidak mencukupi untuk di-ACC!'); return; }
             t.status = 'diacc';
             t.dueDate = new Date(Date.now() + DUE_DATE_ACC_MAX * 24 * 60 * 60 * 1000).toISOString();
-            t.activity.push({ date: new Date().toISOString(), action: 'Di-ACC oleh Admin. Batas ambil 3 hari.' });
+            t.activity.push({ date: new Date().toISOString(), action: 'Pengajuan peminjaman buku diterima oleh Admin. Batas ambil 3 hari.' });
             if (book) { dataToUpdate.books[bookIndex].stock -= 1; bookChanged = true; }
-            alert('Pengajuan di-ACC! Stok dikurangi. Anggota harus mengambil buku dalam 3 hari.');
+            alert('Pengajuan diterima! Stok dikurangi. Anggota harus mengambil buku dalam 3 hari.');
         } else if (action === 'tolak' || action === 'batal') {
             t.status = action === 'tolak' ? 'ditolak' : 'dibatalkan';
             t.activity.push({ date: new Date().toISOString(), action: `${t.status.toUpperCase()} oleh Admin` });
@@ -1083,7 +1190,7 @@ window.handleAdminAction = async (transId, action) => {
             t.status = 'dipinjam';
             t.dueDate = new Date(Date.now() + DUE_DATE_PINJAM_MAX * 24 * 60 * 60 * 1000).toISOString();
             t.activity.push({ date: new Date().toISOString(), action: 'Buku diserahkan dan mulai dipinjam.' });
-            alert('Status diubah menjadi DIPINJAM. Jatuh tempo 7 hari.');
+            alert('Buku telah dipinjam. Jatuh tempo 7 hari.');
         } else if (action === 'kembali') {
             t.status = 'dikembalikan';
             t.returnedDate = new Date().toISOString();

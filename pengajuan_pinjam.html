@@ -29,6 +29,43 @@
   
   console.log("Firebase Realtime Database berhasil diinisialisasi.");
 </script>
+<script>
+    // Tambahkan atau modifikasi fungsi ini di js/script.js
+
+/**
+ * Mengisi field nama peminjam otomatis berdasarkan user yang sedang login.
+ */
+function autoFillUsername() {
+    const user = getLoggedInUser(); // Asumsikan fungsi ini mengembalikan objek user
+    const inputNama = document.getElementById('input-nama-peminjam');
+
+    if (inputNama) {
+        if (user && user.username) {
+            // Jika user login, gunakan username
+            inputNama.value = user.username;
+        } else if (user) {
+            // Jika login tapi tidak ada username (misal hanya email/uid yang didapat)
+            inputNama.value = 'User ID: ' + user.id; 
+        } else {
+            // Jika belum login
+            inputNama.value = 'Silakan Login Dulu';
+            // Opsional: Redirect ke halaman login jika ini halaman krusial
+            // window.location.href = 'login.html'; 
+        }
+    }
+}
+
+// Pastikan fungsi ini dipanggil saat halaman memuat.
+// Tambahkan baris ini di bagian akhir js/script.js Anda:
+document.addEventListener('DOMContentLoaded', () => {
+    // ... (Panggilan fungsi inisialisasi lainnya yang sudah ada)
+
+    // Panggil fungsi auto-fill pada halaman yang relevan
+    if (document.getElementById('input-nama-peminjam')) { // Cek apakah elemen ada di halaman ini
+        autoFillUsername();
+    }
+});
+</script>
 <script src="js/profil.js"></script>
 <script src="js/script.js"></script>
 </head>
@@ -68,7 +105,7 @@
             <form id="form-pengajuan">
                 <div class="form-group">
                     <label>Nama Peminjam:</label>
-                    <input type="text" value="Nama User (Auto-fill)" disabled>
+                    <input type="text" id="input-nama-peminjam" value="Memuat Nama..." disabled>
                 </div>
                 <div class="form-group">
                     <label>Durasi Peminjaman:</label>
