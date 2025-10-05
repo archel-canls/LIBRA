@@ -134,11 +134,48 @@ body {
 .filter-options { font-size: 0.85em; color: #666; margin-top: 5px; width: 100%; }
 
 
-/* Book Card Styling (Responsif Grid) */
+/* ROOT VARIABLES & GENERAL STYLES - TETAP */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+:root {
+    --primary-color: #17a2b8; /* Cyan */
+    --secondary-color: #28a745; /* Green */
+    --accent-color: #ffc107; /* Yellow */
+    --danger-color: #dc3545; /* Red */
+    --bg-light: #f4f4f4;
+    --text-dark: #333;
+    --raw-blue: #007bff; /* Biru mentah, sering digunakan untuk link/primary */
+}
+
+body {
+    background-color: var(--bg-light);
+    color: var(--text-dark);
+    line-height: 1.6;
+}
+
+.container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 80px auto 20px auto;
+}
+
+/* ... HEADER, NAVIGASI, FORM, SEARCH STYLES DIBIARKAN TETAP ... */
+
+/* =====================================================
+Book Card Styling (Responsif Grid) - MODIFIKASI BERAT
+===================================================== 
+*/
 .book-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    display: grid; 
+    /* Lebar kolom default: 170px */
+    grid-template-columns: repeat(auto-fit, 170px); 
     gap: 20px;
+    justify-content: center; 
 }
 
 .book-card {
@@ -149,34 +186,95 @@ body {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
     cursor: pointer;
     transition: transform 0.3s, box-shadow 0.3s;
+    width: 170px; 
+    /* * Hapus margin vertikal/padding yang mungkin menyebabkan jarak. 
+     * Karena card adalah container utama, kita fokus pada img.
+     */
 }
 .book-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
 }
 
+/* =====================================================
+Cover Styling - MODIFIKASI 
+(Menghilangkan Jarak Atas & Mengatur Berat)
+===================================================== 
+*/
 .book-card img {
-    width: 100%;
-    aspect-ratio: 2 / 3;
-    object-fit: cover;
-    display: block;
+    /* 1. Menghilangkan jarak di atas (Hapus margin top) */
+    display: block; 
+    margin: 0 auto; /* Margin 0 di semua sisi, auto kiri/kanan untuk pusat */
+    border-radius: 8px;
+    /* 2. Ukuran tetap dan berat (weight) sama dengan card (170px) */
+    width: 170px; /* Diambil dari lebar book-card */
+    height: 255px; /* Proporsi standar 2:3 (170x255) atau 3:4 (170x226) -> kita pakai 255px agar buku terlihat tinggi */
+    
+    /* Elastis (Full Cover) */
+    object-fit: fill; 
+    
+    /* PENTING: Karena card di-overflow: hidden, card img akan 
+     * mengisi penuh lebar card 170px, dan tinggi 255px. 
+     * Ini memastikan "weight" card dan cover sama di bagian lebar.
+     */
 }
 
 .book-card .book-info {
-    padding: 15px;
-}
-.book-card h3 {
-    font-size: 1.1em;
-    margin-bottom: 5px;
-    height: 40px; /* Jaga konsistensi tinggi */
-    overflow: hidden;
-}
-.book-card p {
-    font-size: 0.9em;
-    color: #666;
-    margin-bottom: 3px;
+    padding: 10px 15px 15px 15px; 
 }
 
+.book-card h3 {
+    font-size: 1.15em; 
+    color: var(--raw-blue); 
+    font-weight: 700; 
+    margin-bottom: 5px;
+    white-space: nowrap;     
+    overflow: hidden;       
+    text-overflow: ellipsis;  
+}
+.book-card p {
+    font-size: 0.85em; 
+    color: #666;
+}
+
+@media (max-width: 768px) {
+    /* Perangkat Kecil (Mobile) */
+    .book-list {
+        grid-template-columns: repeat(auto-fit, 130px); 
+        gap: 15px;
+    }
+    .book-card {
+        width: 130px; /* Sesuaikan lebar card */
+    }
+
+    /* Cover menjadi setengah ukuran dan sama beratnya dengan card */
+    .book-card img {
+        width: 130px; /* Sama dengan lebar card (130px) */
+        height: 195px; /* Proporsi 2:3 (130x195) */
+        margin-top: 0;
+        
+    }
+
+    .book-card .book-info {
+        padding: 8px 10px 10px 10px; 
+    }
+
+    .book-card h3 {
+        font-size: 0.8em; 
+        height: 20px;
+    }
+    .book-card p {
+        font-size: 0.7em; 
+    }
+}
+
+/* Media Query untuk Layar Lebar */
+@media (min-width: 1200px) {
+    .book-list {
+        grid-template-columns: repeat(5, 170px); 
+        justify-content: center; 
+    }
+}
 /* Detail Buku (buka_buku.html) - Responsif */
 .detail-flex {
     display: flex;

@@ -7,47 +7,185 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/profil.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-    tailwind.config = {
-        theme: {
-            extend: {
-                colors: {
-                    // Mendefinisikan warna kustom agar sesuai dengan branding
-                    'primary': '#4f46e5', // Indigo
-                    'secondary': '#10b981', // Green
-                },
-                fontFamily: {
-                    sans: ['Inter', 'sans-serif'],
-                },
+    
+    <style>
+        .book-carousel {
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+            background-color: #ffffff;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            min-height: 220px; /* Tinggi minimum untuk loading state */
+        }
+        .carousel-inner {
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+            height: 100%;
+        }
+   /* Menggunakan <a> sebagai item carousel agar seluruh area bisa diklik */
+    .carousel-item-link {
+            min-width: 100%;
+            display: flex;
+            /* align-items: center; <-- HILANGKAN INI */
+            align-items: flex-start; /* Mengatur alignment ke ATAS (rata atas) */
+            justify-content: flex-start;
+            padding: 15px;
+            background-color: #f7f9fc;
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .carousel-item-link:hover {
+            background-color: #eef1f6; /* Sedikit lebih gelap saat hover */
+        }
+        .carousel-cover-container {
+            padding-left: 12px;
+            flex-shrink: 0;
+            width: 180px; /* Ukuran cover konsisten desktop */
+            height: 240px; /* Tinggi cover konsisten desktop */
+            margin-right: 20px;
+        }
+        .carousel-cover-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .carousel-text {
+            flex: 1;
+            padding-right: 15px; /* Sedikit padding kanan */
+        }
+        .carousel-text h3 {
+            color: #4f46e5; /* Primary Indigo */
+        }
+        /* Kontrol Navigasi (Tombol) */
+        .carousel-control {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            padding: 15px 10px;
+            cursor: pointer;
+            z-index: 10;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        .carousel-control:hover {
+            opacity: 1;
+        }
+        #prev-btn { left: 0; border-radius: 0 8px 8px 0; }
+        #next-btn { right: 0; border-radius: 8px 0 0 8px; }
+        /* Indikator Bawah */
+        .carousel-indicators {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+        }
+        .indicator {
+            width: 10px;
+            height: 10px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .indicator.active {
+            background-color: #4f46e5; /* Warna Primary */
+        }
+            /* Media Query untuk Perangkat Mobile (HP) */
+            @media (max-width: 700px) {
+            .carousel-cover-container {
+                width: 150px; /* Ukuran cover konsisten HP */
+                height: 180px; /* Tinggi cover konsisten HP */
+                margin-top: 0px;
+                margin-right: 10;
+            }
+            .carousel-text {
+                margin-left: 0;
+                max-width: 100%;
+                margin-top: 0px;
+            }
+            .carousel-text h3 {
+                font-size: 1rem;
+                margin-bottom: 0px;
+            }
+            .carousel-text p {
+                font-size: 0.7rem;
             }
         }
-    }
-</script>
-<script>
-  // Konfigurasi Proyek LIBRA Library Area Anda
-  const firebaseConfig = {
-    apiKey: "AIzaSyCdVYKc6waij3pmxI9dLDSBIgbYiFIRr3A",
-    authDomain: "libra-library-area.firebaseapp.com",
-    databaseURL: "https://libra-library-area-default-rtdb.asia-southeast1.firebasedatabase.app", 
-    projectId: "libra-library-area",
-    storageBucket: "libra-library-area.firebasestorage.app",
-    messagingSenderId: "455509444693",
-    appId: "1:455509444693:web:883766ec8a49032f0b2cdc",
-  };
-  
-  // Inisialisasi Firebase
-  firebase.initializeApp(firebaseConfig);
-  
-  // Referensi ke root database. Variabel ini digunakan di js/script.js
-  const dbRef = firebase.database().ref(); 
-  
-  console.log("Firebase Realtime Database berhasil diinisialisasi.");
-</script>
-<script src="js/profil.js"></script>
-<script src="js/script.js"></script> 
+        @media (max-width: 500px) {
+            .book-carousel {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            background-color: #ffffff;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            min-height: 170px; /* Tinggi minimum untuk loading state */
+        }
+            .carousel-cover-container {
+                width: 90px; /* Ukuran cover konsisten HP */
+                height: 120px; /* Tinggi cover konsisten HP */
+                margin-top: 0px;
+                margin-right: 10;
+            }
+            .carousel-text {
+                margin-left: 0;
+                max-width: 100%;
+                margin-top: 0px;
+            }
+            .carousel-text h3 {
+                color: #4f46e5; /* Primary Indigo */
+                margin-top: 0;
+                margin-bottom: 5px; /* Jarak antara Judul dan Penulis/Sinopsis */
+                line-height: 0.9; /* KUNCI: Persempit spasi antar baris Judul */
+                font-size: 0.9rem; /* Disesuaikan untuk tampilan desktop */
+            }
+            .carousel-text p {
+                font-size: 0.6rem;
+                line-height: 0.9; 
+            }
+        }
+
+        
+
+    </style>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    </script>
+    <script>
+        // Konfigurasi Proyek LIBRA Library Area Anda
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdVYKc6waij3pmxI9dLDSBIgbYiFIRr3A",
+            authDomain: "libra-library-area.firebaseapp.com",
+            databaseURL: "https://libra-library-area-default-rtdb.asia-southeast1.firebasedatabase.app", 
+            projectId: "libra-library-area",
+            storageBucket: "libra-library-area.firebasestorage.app",
+            messagingSenderId: "455509444693",
+            appId: "1:455509444693:web:883766ec8a49032f0b2cdc",
+        };
+        
+        // Inisialisasi Firebase
+        firebase.initializeApp(firebaseConfig);
+        
+        // Referensi ke root database. Variabel ini digunakan di js/script.js
+        const dbRef = firebase.database().ref(); 
+        const booksRef = dbRef.child('books'); 
+        
+        console.log("Firebase Realtime Database berhasil diinisialisasi.");
+    </script>
+    <script src="js/profil.js"></script>
+    <script src="js/script.js"></script> 
 </head>
 <body id="home-page">
     <header class="header">
@@ -71,8 +209,25 @@
         </nav>
     </header>
     <main class="container max-w-6xl mx-auto px-4 py-8">
+        
+        <section class="book-carousel mb-8" id="book-carousel-container">
+            <div id="carousel-inner" class="carousel-inner">
+                <div class="carousel-item-link flex justify-center items-center h-full">
+                    <i class="fas fa-spinner fa-spin text-4xl text-primary"></i>
+                    <p class="ml-4 text-gray-600">Memuat rekomendasi...</p>
+                </div>
+            </div>
+            
+            <button id="prev-btn" class="carousel-control hidden" aria-label="Previous"><i class="fas fa-chevron-left"></i></button>
+            <button id="next-btn" class="carousel-control hidden" aria-label="Next"><i class="fas fa-chevron-right"></i></button>
+            
+            <div id="carousel-indicators" class="carousel-indicators">
+                </div>
+        </section>
+        
         <section class="search-section flex flex-col space-y-4 p-4 bg-white shadow-xl rounded-xl">
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+                <input type="text" id="search-input" placeholder="Cari buku berdasarkan..." class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary text-gray-800 w-full">
                 <div class="relative w-full sm:w-auto">
                     <button id="filter-button" class="w-full sm:w-40 flex items-center justify-center px-4 py-3 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 transition duration-150 ease-in-out font-semibold text-sm">
                         <i class="fas fa-filter mr-2"></i>
@@ -87,8 +242,6 @@
                         <a href="#" data-filter="genre" class="filter-option block px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg">Genre</a>
                         </div>
                 </div>
-
-                <input type="text" id="search-input" placeholder="Cari buku apapun" class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary text-gray-800 w-full">
                 <button id="search-button" class="px-4 py-3 bg-secondary text-white rounded-lg shadow-md hover:bg-green-600 transition duration-150 ease-in-out font-semibold w-full sm:w-auto">
                     <i class="fas fa-search"></i>
                     <span class="ml-1">Cari</span>
@@ -145,11 +298,186 @@
     </div>
 
     <script>
+        // ==============================================
+        // LOGIKA JAVASCRIPT CAROUSEL (Disesuaikan)
+        // ==============================================
+        let currentCarouselIndex = 0;
+        let booksData = [];
+
+        /**
+         * Mengambil data buku dari Firebase dan memilih maksimal 7 buku secara acak.
+         * @returns {Promise<Array>} Array buku yang dipilih secara acak.
+         */
+        async function fetchRandomBooks() {
+            try {
+                // booksRef didefinisikan di dalam tag <script> di <head>
+                const snapshot = await booksRef.once('value'); 
+                const allBooks = [];
+                
+                snapshot.forEach(childSnapshot => {
+                    const book = childSnapshot.val();
+                    // Hanya tampilkan buku yang memiliki data esensial
+                    if (book && book.cover && book.title && book.synopsis) {
+                        book.id = childSnapshot.key;
+                        allBooks.push(book);
+                    }
+                });
+
+                if (allBooks.length === 0) {
+                    return [];
+                }
+
+                // Shuffle array buku (Fisher-Yates)
+                for (let i = allBooks.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [allBooks[i], allBooks[j]] = [allBooks[j], allBooks[i]];
+                }
+
+                // Ambil maksimal 7 buku teratas
+                return allBooks.slice(0, 7);
+
+            } catch (error) {
+                console.error("Error fetching books for carousel:", error);
+                return [];
+            }
+        }
+
+        /**
+         * Merender item carousel berdasarkan data buku.
+         * @param {Array} books Array buku untuk ditampilkan.
+         */
+        function renderCarousel(books) {
+            const carouselInner = document.getElementById('carousel-inner');
+            const indicatorsContainer = document.getElementById('carousel-indicators');
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+
+            carouselInner.innerHTML = '';
+            indicatorsContainer.innerHTML = '';
+            booksData = books;
+
+            if (books.length === 0) {
+                carouselInner.innerHTML = `
+                    <div class="carousel-item-link flex justify-center items-center h-80">
+                        <p class="text-xl text-gray-500">Tidak ada buku rekomendasi saat ini.</p>
+                    </div>`;
+                prevBtn.classList.add('hidden');
+                nextBtn.classList.add('hidden');
+                return;
+            }
+
+            books.forEach((book, index) => {
+                // Batas sinopsis
+                const synopsisText = book.synopsis && book.synopsis.length > 200 
+                    ? book.synopsis.substring(0,200) + '...' 
+                    : book.synopsis || "Sinopsis tidak tersedia.";
+
+                // Menggunakan elemen <a> agar seluruh area item dapat diklik
+                const itemLink = document.createElement('a');
+                itemLink.className = 'carousel-item-link';
+                // Arahkan ke buka_buku.html dengan ID buku
+                itemLink.href = `buka_buku.html?id=${book.id}`; 
+                itemLink.dataset.index = index;
+
+                itemLink.innerHTML = `
+                    <div class="carousel-cover-container">
+                        <img src="${book.cover}" alt="Cover ${book.title}">
+                    </div>
+                    
+                    <div class="carousel-text">
+                        <h3 class="text-2xl sm:text-3xl font-bold mb-2">${book.title}</h3>
+                        <p class="text-sm font-semibold text-gray-600 mb-1">Oleh: ${book.author || 'Tidak Diketahui'}</p>
+                        <p class="text-gray-700 text-sm italic mt-2">${synopsisText}</p>
+                    </div><br>
+                `;
+                carouselInner.appendChild(itemLink);
+
+                // Buat indikator
+                const indicator = document.createElement('span');
+                indicator.className = 'indicator';
+                indicator.dataset.index = index;
+                indicator.addEventListener('click', (e) => {
+                    e.preventDefault(); // Mencegah klik dari <a> saat mengklik indikator
+                    goToSlide(index);
+                });
+                indicatorsContainer.appendChild(indicator);
+            });
+
+            // Tampilkan navigasi jika ada lebih dari 1 buku
+            if (books.length > 1) {
+                prevBtn.classList.remove('hidden');
+                nextBtn.classList.remove('hidden');
+            } else {
+                prevBtn.classList.add('hidden');
+                nextBtn.classList.add('hidden');
+            }
+
+            goToSlide(0); // Tampilkan item pertama
+        }
+
+
+        function goToSlide(index) {
+            if (booksData.length === 0) return;
+
+            currentCarouselIndex = (index + booksData.length) % booksData.length;
+            const offset = -currentCarouselIndex * 100;
+            document.getElementById('carousel-inner').style.transform = `translateX(${offset}%)`;
+
+            // Update indikator
+            document.querySelectorAll('#carousel-indicators .indicator').forEach((ind, idx) => {
+                if (idx === currentCarouselIndex) {
+                    ind.classList.add('active');
+                } else {
+                    ind.classList.remove('active');
+                }
+            });
+        }
+
+        /**
+         * Pindah ke slide berikutnya.
+         */
+        function nextSlide() {
+            goToSlide(currentCarouselIndex + 1);
+        }
+
+        /**
+         * Pindah ke slide sebelumnya.
+         */
+        function prevSlide() {
+            goToSlide(currentCarouselIndex - 1);
+        }
+
+        /**
+         * Fungsi inisialisasi utama carousel.
+         */
+        async function initBookCarousel() {
+            const randomBooks = await fetchRandomBooks();
+            renderCarousel(randomBooks);
+
+            // Pasang event listener untuk tombol
+            document.getElementById('prev-btn').addEventListener('click', (e) => {
+                e.preventDefault(); // Mencegah perilaku default tombol
+                prevSlide();
+            });
+            document.getElementById('next-btn').addEventListener('click', (e) => {
+                e.preventDefault(); // Mencegah perilaku default tombol
+                nextSlide();
+            });
+
+            // Auto-play (Ganti slide setiap 7 detik jika ada lebih dari 1 buku)
+            if (randomBooks.length > 1) {
+                setInterval(nextSlide, 7000); 
+            }
+        }
+        
+        // ==============================================
+        // LOGIKA JAVASCRIPT ASLI (Filter & Search)
+        // ==============================================
+
         // Variabel GLOBAL untuk melacak state filter, diakses oleh js/script.js
         let currentFilterType = 'all'; 
         let activeTag = null; 
 
-        // Data untuk tag dinamis
         const tagData = {
             'jenis_buku': [
                 { name: 'Ebook', value: 'ebook' }, 
@@ -176,7 +504,6 @@
             ]
         };
 
-        // Logika JavaScript untuk Filter UI & Tag Dinamis
         document.addEventListener('DOMContentLoaded', () => {
             const filterButton = document.getElementById('filter-button');
             const filterDropdown = document.getElementById('filter-dropdown');
@@ -184,7 +511,8 @@
             const filterOptions = document.querySelectorAll('.filter-option');
             const dynamicTagsContainer = document.getElementById('dynamic-tags');
             
-            // Fungsi untuk membuat dan menampilkan tag
+            initBookCarousel(); 
+
             const renderTags = (filterType) => {
                 dynamicTagsContainer.innerHTML = ''; 
                 if (filterType === 'all') {
@@ -201,8 +529,8 @@
                     tagElement.dataset.type = filterType;
 
                     if (activeTag === tag.value) {
-                         tagElement.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600', 'hover:bg-indigo-700');
-                         tagElement.classList.remove('bg-indigo-100', 'text-indigo-700', 'hover:bg-indigo-200');
+                           tagElement.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600', 'hover:bg-indigo-700');
+                           tagElement.classList.remove('bg-indigo-100', 'text-indigo-700', 'hover:bg-indigo-200');
                     }
                     
                     tagElement.addEventListener('click', () => {
@@ -213,9 +541,7 @@
                 });
             };
 
-            // Fungsi untuk menangani klik pada tag
             const handleTagClick = (tagValue, filterType) => {
-                // Toggle activeTag
                 if (activeTag === tagValue) {
                     activeTag = null; 
                 } else {
@@ -224,13 +550,11 @@
                 
                 renderTags(currentFilterType);
 
-                // Panggil fungsi filter utama yang ada di js/script.js
                 if (typeof filterBookList === 'function') {
                     filterBookList(currentFilterType, activeTag);
                 }
             };
 
-            // Fungsi untuk menampilkan/menyembunyikan dropdown
             filterButton.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation(); 
@@ -244,7 +568,6 @@
                 }
             });
 
-            // Sembunyikan dropdown saat mengklik di luar
             document.addEventListener('click', (e) => {
                 if (!filterDropdown.contains(e.target) && !filterButton.contains(e.target)) {
                     filterDropdown.classList.remove('opacity-100', 'scale-100');
@@ -252,7 +575,6 @@
                 }
             });
 
-            // Logika memilih opsi filter
             filterOptions.forEach(option => {
                 option.addEventListener('click', (e) => {
                     e.preventDefault();
@@ -260,9 +582,8 @@
                     const selectedText = option.textContent.trim();
                     const selectedFilter = option.getAttribute('data-filter');
                     
-                    // Perbarui state
                     currentFilterType = selectedFilter;
-                    activeTag = null; // Reset tag yang aktif saat filter utama berubah
+                    activeTag = null; 
 
                     currentFilterText.textContent = selectedText;
                     
@@ -271,14 +592,12 @@
 
                     renderTags(currentFilterType);
                     
-                    // Panggil fungsi filter utama yang ada di js/script.js
                     if (typeof filterBookList === 'function') {
                         filterBookList(currentFilterType, activeTag);
                     }
                 });
             });
 
-            // Inisialisasi event listener pencarian setelah DOMContentLoaded
             if (typeof handleSearch === 'function') {
                 handleSearch(document.body.id);
             }

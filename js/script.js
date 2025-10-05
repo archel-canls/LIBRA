@@ -487,8 +487,7 @@ async function renderBookList(page, filter = {}) {
                 <img src="${coverSrc}" alt="Cover ${book.title}" onerror="this.onerror=null; this.src='img/default.jpg';">
                 <div class="book-info">
                     <h3>${book.title}</h3>
-                    <p><strong>Penulis:</strong> ${book.author}</p>
-                    <p><strong>Tahun Terbit:</strong> ${book.year}</p>
+                    <p><strong>Penulis:</strong> ${book.author} (${book.year})</p>
                     <p><strong>Jenis Buku:</strong> <span class="book-type-tag" style="background-color: #eee; padding: 2px 5px; border-radius: 3px; font-size: 0.8em;">${book.type}</span></p>
                 </div>
             `;

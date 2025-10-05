@@ -2,26 +2,26 @@
 .header-right-menu {
     display: flex;
     align-items: center;
-    gap: 10px; /* Jarak antara ikon profil dan hamburger */
+    gap: 10px;
 }
 
 .profile-icon {
     width: 40px;
-    height: 40px;
+    height: 40x;
     border-radius: 50%;
     overflow: hidden;
     cursor: pointer;
     border: 2px solid white;
-    display: flex; /* Untuk menengahkan ikon font-awesome default */
+    display: flex; 
     justify-content: center;
     align-items: center;
-    font-size: 2em; /* Ukuran ikon default */
-    color: white; /* Warna ikon default */
+    font-size: 2em; 
+    color: white; 
     transition: all 0.2s;
-    background-color: #138496; /* Warna latar belakang default, opsional */
+    background-color: #138496; 
 }
 .profile-icon:hover {
-    border-color: var(--accent-color, #ffc107); /* Menggunakan variabel dari style.css jika tersedia */
+    border-color: var(--accent-color, #ffc107); 
     transform: scale(1.05);
 }
 .profile-icon img {
@@ -44,7 +44,7 @@
     z-index: 2000;
     transition: width 0.3s ease-in-out;
     overflow-x: hidden;
-    overflow-y: auto; /* Bisa discroll jika konten panjang */
+    overflow-y: auto; 
 }
 
 .sidebar.open {
@@ -65,7 +65,6 @@
 }
 
 .profile-info img {
-    /* w-24 h-24 rounded-full mx-auto border-4 border-white shadow-lg */
     display: block;
     width: 96px; 
     height: 96px;
@@ -90,7 +89,7 @@
 }
 
 .sidebar-link:hover {
-    background-color: #f4f4f4; /* Menggunakan variabel bg-light */
+    background-color: #f4f4f4;
     color: var(--primary-color, #17a2b8); 
 }
 
@@ -234,7 +233,7 @@
     opacity: 1;
 }
 
-/* Sembunyikan fitur login secara default */
+/* Penymbunyian fitur login*/
 .login-feature {
     display: none;
 }
