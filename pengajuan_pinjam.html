@@ -50,6 +50,18 @@
     </script>
     
     <script>
+        // PASTIKAN FUNGSI getLoggedInUser ADA DI js/script.js
+        // Ini adalah MOCKUP jika Anda belum implementasi getLoggedInUser()
+        // function getLoggedInUser() {
+        //     // MOCK: Ganti dengan logika session/auth Anda yang sebenarnya
+        //     return { name: 'Siti Aisyah', username: 'siti_a', id: 'user123' }; 
+        // }
+
+
+        /**
+         * Mengisi field nama peminjam otomatis berdasarkan user yang sedang login.
+         * MODIFIKASI: Menggunakan user.name, bukan user.username.
+         */
         function autoFillUsername() {
             // Asumsikan fungsi ini ada di js/script.js
             if (typeof getLoggedInUser !== 'function') {
@@ -99,6 +111,13 @@
                 }
             }
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (document.getElementById('input-nama-peminjam')) {
+                autoFillUsername();
+            }
+            
+           
     </script>
     <script src="js/profil.js"></script>
 </head>
