@@ -311,29 +311,27 @@
     </div>
     <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
-    <div id="edit-photo-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden z-[1000]">
-        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm mx-4">
-            <h3 class="text-xl font-bold mb-4">Ubah Foto Profil</h3>
-            <form id="edit-photo-form">
-                <input type="file" id="modal-foto-upload" accept="image/*" required class="w-full mb-4 p-2 border rounded">
-                <div class="flex justify-end space-x-3">
-                    <button type="button" id="close-modal" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Batal</button>
-                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded hover:bg-indigo-700">Simpan Foto</button>
-                </div>
-            </form>
+ <div id="edit-photo-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden z-[1000]">
+    <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm mx-4">
+        <h3 class="text-xl font-bold mb-4">Ubah Foto Profil</h3>
+        
+        <div class="text-center mb-4">
+            <img id="modal-current-profile-img" src="img/default_user.png" alt="Foto Profil Saat Ini" class="w-24 h-24 rounded-full mx-auto border-4 border-primary shadow-lg">
         </div>
-    </div>
-    
-    <div id="add-genre-modal" class="custom-genre-modal">
-        <div class="custom-genre-modal-content">
-            <h3 class="text-xl font-bold mb-4">Tambahkan Genre Baru</h3>
-            <input type="text" id="new-genre-input" placeholder="Masukkan nama genre (misal: Harem)" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-600 focus:border-indigo-600 text-gray-800 mb-4">
+        <form id="edit-photo-form">
+             <label for="modal-foto-upload" class="block text-sm font-medium text-gray-700 mb-2">Pilih Foto Baru:</label>
+            <input type="file" id="modal-foto-upload" accept="image/*" required class="w-full mb-4 p-2 border rounded">
+            
+            <button type="button" id="delete-photo-btn" class="w-full mb-3 px-4 py-2 text-red-600 border border-red-600 rounded hover:bg-red-50 hidden">
+                <i class="fas fa-trash-alt mr-2"></i> Hapus Foto Profil
+            </button>
             <div class="flex justify-end space-x-3">
-                <button type="button" id="close-genre-modal" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Batal</button>
-                <button type="button" id="save-genre-button" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Tambahkan</button>
+                <button type="button" id="close-modal" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Batal</button>
+                <button type="submit" class="px-4 py-2 bg-primary text-white rounded hover:bg-indigo-700">Simpan Foto</button>
             </div>
-        </div>
+        </form>
     </div>
+</div>
 
     <script>
         // ==============================================

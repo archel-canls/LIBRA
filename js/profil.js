@@ -1,9 +1,10 @@
-const DEFAULT_PROFILE_IMG = 'img/default_user.png'; 
+const DEFAULT_PROFILE_IMG = 'img/default_user.png';
 
 document.addEventListener('DOMContentLoaded', () => {
     // Memastikan fungsi database tersedia dari script.js
-    if (typeof getLoggedInUser !== 'function' || typeof getAllData !== 'function' || typeof setDatabaseData !== 'function') {
-        console.error("Fungsi database/session dari script.js tidak ditemukan.");
+    // Catatan: Asumsikan getLoggedInUser, getAllData, setDatabaseData, dan setLoggedInUser didefinisikan di 'script.js'
+    if (typeof getLoggedInUser !== 'function' || typeof getAllData !== 'function' || typeof setDatabaseData !== 'function' || typeof setLoggedInUser !== 'function') {
+        console.error("Fungsi database/session dari script.js tidak ditemukan. Pastikan script tersebut dimuat.");
         return;
     }
 
@@ -11,9 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // DOM Elements
     const profileIcon = document.getElementById('profile-icon');
-    const headerProfileImg = document.getElementById('header-profile-img'); 
+    const headerProfileImg = document.getElementById('header-profile-img');
     const defaultIcon = profileIcon ? profileIcon.querySelector('.default-icon') : null;
-    
+
     const profileSidebar = document.getElementById('profile-sidebar');
     const sidebarOverlay = document.getElementById('sidebar-overlay');
     const closeSidebarBtn = document.getElementById('close-sidebar');
@@ -28,39 +29,42 @@ document.addEventListener('DOMContentLoaded', () => {
     // Modal Elements for Edit Photo
     const editPhotoLink = document.getElementById('link-edit-profile-photo');
     const editPhotoModal = document.getElementById('edit-photo-modal');
-    const closeModaBtn = document.getElementById('close-modal');
+    const closeModalBtn = document.getElementById('close-modal');
     const editPhotoForm = document.getElementById('edit-photo-form');
     const modalFotoUpload = document.getElementById('modal-foto-upload');
+    // Tambahan elemen baru untuk fungsionalitas di modal
+    const modalCurrentPhoto = document.getElementById('modal-current-profile-img');
+    const deletePhotoBtn = document.getElementById('delete-photo-btn');
     
     // --- FUNGSI UTAMA: UPDATE UI HEADER & SIDEBAR ---
     const updateProfileUI = (user) => {
+        // Tentukan sumber gambar, gunakan profilePicture jika ada, jika tidak gunakan default
         const imageSource = (user && user.profilePicture) ? user.profilePicture : DEFAULT_PROFILE_IMG;
 
-        // 1. UPDATE HEADER ICON (Pre-click)
+        // 1. UPDATE HEADER ICON
         if (headerProfileImg && defaultIcon) {
             headerProfileImg.src = imageSource;
             
             if (imageSource === DEFAULT_PROFILE_IMG) {
-                // Belum Login: Tampilkan ikon default (i), sembunyikan gambar (img)
                 headerProfileImg.style.display = 'none';
                 defaultIcon.style.display = 'block';
             } else {
-                // Sudah Login: Tampilkan gambar (img), sembunyikan ikon default (i)
                 headerProfileImg.style.display = 'block';
                 defaultIcon.style.display = 'none';
             }
         }
 
-        // 2. UPDATE SIDEBAR CONTENT (Post-click)
+        // 2. UPDATE SIDEBAR CONTENT
         if (user) {
             // Status: SUDAH LOGIN
-            sidebarUsername.textContent = user.username || 'Pengguna';
+            sidebarUsername.textContent = user.name || 'Pengguna';
             sidebarProfileImg.src = imageSource;
             
             authText.textContent = 'Logout';
             authIcon.className = 'fas fa-sign-out-alt mr-3';
-            sidebarAuthLink.href = '#'; 
+            sidebarAuthLink.href = '#'; // Untuk mencegah navigasi langsung
             
+            // Tampilkan fitur yang hanya untuk pengguna login
             loginFeatures.forEach(el => el.style.display = 'flex');
 
             // Setup Logout Listener
@@ -68,10 +72,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.preventDefault();
                 if (confirm("Apakah Anda yakin ingin logout?")) {
                     setLoggedInUser(null);
+                    // Arahkan ke halaman utama setelah logout
                     window.location.href = 'index.html'; 
                 }
             };
-
+            
         } else {
             // Status: BELUM LOGIN (Pengunjung)
             sidebarUsername.textContent = 'Pengunjung';
@@ -82,11 +87,44 @@ document.addEventListener('DOMContentLoaded', () => {
             sidebarAuthLink.href = 'login.html';
             sidebarAuthLink.onclick = null;
             
+            // Sembunyikan fitur yang hanya untuk pengguna login
             loginFeatures.forEach(el => el.style.display = 'none');
         }
     };
     
-    // --- FUNGSI EDIT FOTO PROFIL ---
+    // --- FUNGSI RESET FOTO PROFIL KE DEFAULT ---
+    const resetProfilePhoto = async () => {
+        if (!currentUser) return;
+
+        try {
+            const data = await getAllData();
+            const userIndex = data.users.findIndex(u => u.id === currentUser.id);
+
+            if (userIndex !== -1) {
+                // Hapus properti profilePicture dari objek user di database
+                delete data.users[userIndex].profilePicture;
+
+                await setDatabaseData('users', data.users);
+
+                // Update session user (hapus properti profilePicture)
+                currentUser = { ...currentUser };
+                delete currentUser.profilePicture;
+                setLoggedInUser(currentUser);
+
+                updateProfileUI(currentUser);
+                alert('Foto Profil berhasil dihapus. Kembali ke foto default!');
+                editPhotoModal.classList.add('hidden');
+            } else {
+                alert('Kesalahan sistem: Pengguna tidak ditemukan di database.');
+            }
+        } catch (error) {
+            console.error("Error resetting profile photo:", error);
+            alert('Gagal menghapus foto profil. Coba lagi.');
+        }
+    }
+
+
+    // --- FUNGSI EDIT FOTO PROFIL (UPLOAD BARU) ---
     const handleProfilePhotoEdit = async (e) => {
         e.preventDefault();
         
@@ -102,26 +140,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const reader = new FileReader();
         reader.onload = async function(event) {
-            const newPhotoData = event.target.result;
+            const newPhotoData = event.target.result; // Data URL gambar
             
             try {
-                // 1. Ambil semua data
                 const data = await getAllData();
-                
-                // 2. Cari dan update user di array users
                 const userIndex = data.users.findIndex(u => u.id === currentUser.id);
 
                 if (userIndex !== -1) {
+                    // Update properti profilePicture dengan Data URL baru
                     data.users[userIndex].profilePicture = newPhotoData;
                     
-                    // 3. Simpan kembali data ke Firebase
                     await setDatabaseData('users', data.users);
                     
-                    // 4. Update session user saat ini dan variabel global currentUser
+                    // Update session user
                     currentUser = { ...currentUser, profilePicture: newPhotoData };
-                    setLoggedInUser(currentUser); 
+                    setLoggedInUser(currentUser);
                     
-                    // 5. Perbarui tampilan UI
                     updateProfileUI(currentUser);
                     
                     alert('Foto Profil berhasil diperbarui!');
@@ -142,42 +176,65 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleSidebar = () => {
         profileSidebar.classList.toggle('open');
         sidebarOverlay.classList.toggle('active');
+        // Mencegah scroll pada body saat sidebar terbuka
         document.body.style.overflow = profileSidebar.classList.contains('open') ? 'hidden' : '';
     };
 
+    // Event Listener untuk Sidebar
     if (profileIcon) profileIcon.addEventListener('click', toggleSidebar);
     if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', toggleSidebar);
     if (sidebarOverlay) sidebarOverlay.addEventListener('click', toggleSidebar);
 
-    // Modal Events
+    // Event Listener untuk membuka Modal Edit Foto
     if (editPhotoLink) {
         editPhotoLink.addEventListener('click', (e) => {
             e.preventDefault();
+            // Pastikan user sudah login sebelum membuka modal
             if(currentUser) {
+                // Tampilkan foto saat ini di modal
+                const currentImage = (currentUser && currentUser.profilePicture) ? currentUser.profilePicture : DEFAULT_PROFILE_IMG;
+                if(modalCurrentPhoto) modalCurrentPhoto.src = currentImage;
+                
+                // Tampilkan tombol hapus hanya jika bukan foto default
+                if(deletePhotoBtn) deletePhotoBtn.style.display = (currentImage !== DEFAULT_PROFILE_IMG) ? 'block' : 'none';
+
+                // Tampilkan modal dan tutup sidebar
                 editPhotoModal.classList.remove('hidden');
-                profileSidebar.classList.remove('open'); // Tutup sidebar saat modal dibuka
+                profileSidebar.classList.remove('open'); 
                 sidebarOverlay.classList.remove('active');
             }
         });
     }
 
-    if (closeModaBtn) closeModaBtn.addEventListener('click', () => {
+    // Event Listener untuk menutup Modal
+    if (closeModalBtn) closeModalBtn.addEventListener('click', () => {
         editPhotoModal.classList.add('hidden');
     });
+    
+    // Handler untuk tombol Hapus Foto Profil
+    if (deletePhotoBtn) {
+        deletePhotoBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if(confirm("Apakah Anda yakin ingin menghapus foto profil kustom Anda dan kembali ke foto default?")) {
+                resetProfilePhoto();
+            }
+        });
+    }
 
+    // Handler untuk form submit (upload foto baru)
     if (editPhotoForm) {
         editPhotoForm.addEventListener('submit', handleProfilePhotoEdit);
     }
     
-    // Panggil fungsi utama saat DOM siap
+    // Panggil fungsi utama saat DOM siap untuk inisialisasi tampilan
     updateProfileUI(currentUser);
 });
 
+// Konfigurasi Tailwind CSS (Jika di dalam file yang sama, jika tidak, abaikan ini)
 tailwind.config = {
     theme: {
         extend: {
             colors: {
-                // Mendefinisikan warna kustom agar sesuai dengan branding
                 'primary': '#4f46e5', // Indigo
                 'secondary': '#10b981', // Green
             },

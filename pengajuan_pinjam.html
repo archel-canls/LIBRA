@@ -4,117 +4,186 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pengajuan Pinjam | Libra</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/profil.css">
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-  // Konfigurasi Proyek LIBRA Library Area Anda
-  const firebaseConfig = {
-    apiKey: "AIzaSyCdVYKc6waij3pmxI9dLDSBIgbYiFIRr3A",
-    authDomain: "libra-library-area.firebaseapp.com",
-    databaseURL: "https://libra-library-area-default-rtdb.asia-southeast1.firebasedatabase.app", 
-    projectId: "libra-library-area",
-    storageBucket: "libra-library-area.firebasestorage.app",
-    messagingSenderId: "455509444693",
-    appId: "1:455509444693:web:883766ec8a49032f0b2cdc",
-  };
-  
-  // Inisialisasi Firebase
-  firebase.initializeApp(firebaseConfig);
-  
-  // Referensi ke root database. Variabel ini digunakan di js/script.js
-  const dbRef = firebase.database().ref(); 
-  
-  console.log("Firebase Realtime Database berhasil diinisialisasi.");
-</script>
-<script>
-    // Tambahkan atau modifikasi fungsi ini di js/script.js
-
-/**
- * Mengisi field nama peminjam otomatis berdasarkan user yang sedang login.
- */
-function autoFillUsername() {
-    const user = getLoggedInUser(); // Asumsikan fungsi ini mengembalikan objek user
-    const inputNama = document.getElementById('input-nama-peminjam');
-
-    if (inputNama) {
-        if (user && user.username) {
-            // Jika user login, gunakan username
-            inputNama.value = user.username;
-        } else if (user) {
-            // Jika login tapi tidak ada username (misal hanya email/uid yang didapat)
-            inputNama.value = 'User ID: ' + user.id; 
-        } else {
-            // Jika belum login
-            inputNama.value = 'Silakan Login Dulu';
-            // Opsional: Redirect ke halaman login jika ini halaman krusial
-            // window.location.href = 'login.html'; 
-        }
-    }
-}
-
-// Pastikan fungsi ini dipanggil saat halaman memuat.
-// Tambahkan baris ini di bagian akhir js/script.js Anda:
-document.addEventListener('DOMContentLoaded', () => {
-    // ... (Panggilan fungsi inisialisasi lainnya yang sudah ada)
-
-    // Panggil fungsi auto-fill pada halaman yang relevan
-    if (document.getElementById('input-nama-peminjam')) { // Cek apakah elemen ada di halaman ini
-        autoFillUsername();
-    }
-});
-</script>
-<script src="js/profil.js"></script>
-<script src="js/script.js"></script>
-</head>
-<body id="pengajuan-pinjam-page">
-    <header class="header">
-        <div id="hamburger-menu" class="hamburger order-1"><i class="fas fa-bars"></i></div>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        // Konfigurasi Proyek LIBRA Library Area Anda
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdVYKc6waij3pmxI9dLDSBIgbYiFIRr3A",
+            authDomain: "libra-library-area.firebaseapp.com",
+            databaseURL: "https://libra-library-area-default-rtdb.asia-southeast1.firebasedatabase.app", 
+            projectId: "libra-library-area",
+            storageBucket: "libra-library-area.firebasestorage.app",
+            messagingSenderId: "455509444693",
+            appId: "1:455509444693:web:883766ec8a49032f0b2cdc",
+        };
         
-        <div class="logo order-2"><a href="index.html">Libra</a></div>
+        // Inisialisasi Firebase
+        firebase.initializeApp(firebaseConfig);
+        
+        // Referensi ke root database.
+        const dbRef = firebase.database().ref(); 
+        
+        // Tailwind Config untuk konsistensi warna
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#4f46e5', // Indigo 600
+                        'secondary': '#10b981', // Emerald 500
+                        'accent': '#f59e0b', // Amber 500
+                        'gray-bg': '#f9fafb',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <script>
+        function autoFillUsername() {
+            // Asumsikan fungsi ini ada di js/script.js
+            if (typeof getLoggedInUser !== 'function') {
+                console.error("Fungsi getLoggedInUser tidak ditemukan. Pastikan script.js dimuat dengan benar.");
+                return;
+            }
+
+            const user = getLoggedInUser(); 
+            const inputNama = document.getElementById('input-nama-peminjam');
+            const submitBtn = document.querySelector('#form-pengajuan button[type="submit"]');
+            const loginWarning = document.getElementById('login-warning');
+
+            if (inputNama) {
+                if (user && user.name) { // <<< MENGGUNAKAN user.name
+                    // Status: SUDAH LOGIN & ADA NAMA LENGKAP
+                    inputNama.value = user.name; 
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Ajukan Peminjaman';
+                        submitBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                        submitBtn.classList.add('bg-primary', 'hover:bg-indigo-700');
+                    }
+                    if(loginWarning) loginWarning.classList.add('hidden');
+
+                } else if (user) {
+                    // Status: LOGIN tapi hanya punya username (fallback)
+                    inputNama.value = user.username || 'User ID: ' + user.id; 
+                    // Tombol tetap aktif karena user sudah login, meski nama lengkap kosong
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Ajukan Peminjaman';
+                        submitBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                        submitBtn.classList.add('bg-primary', 'hover:bg-indigo-700');
+                    }
+                    if(loginWarning) loginWarning.classList.add('hidden');
+
+                } else {
+                    // Status: BELUM LOGIN
+                    inputNama.value = 'Silakan Login Dulu';
+                    if (submitBtn) {
+                         submitBtn.disabled = true;
+                         submitBtn.textContent = 'Login untuk Mengajukan';
+                         submitBtn.classList.remove('bg-primary', 'hover:bg-indigo-700');
+                         submitBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                    }
+                    if(loginWarning) loginWarning.classList.remove('hidden');
+                }
+            }
+        }
+    </script>
+    <script src="js/profil.js"></script>
+</head>
+<body id="pengajuan-pinjam-page" class="bg-gray-bg min-h-screen flex flex-col">
+    <header class="header bg-white shadow-md sticky top-0 z-40">
+        <div id="hamburger-menu" class="hamburger order-1 text-gray-700 hover:text-primary transition duration-150"><i class="fas fa-bars"></i></div>
+        
+        <div class="logo order-2 text-2xl font-bold text-primary"><a href="index.html">📚 Libra</a></div>
         
         <div class="header-right-menu order-3">
-            <div id="profile-icon" class="profile-icon">
-                <img id="header-profile-img" src="img/default_user.png" alt="Profil">
-                <i class="fas fa-user-circle default-icon"></i> 
+            <div id="profile-icon" class="profile-icon cursor-pointer flex items-center justify-center w-10 h-10 rounded-full border-2 border-primary hover:bg-primary/10 transition duration-150">
+                <img id="header-profile-img" src="img/default_user.png" alt="Profil" class="w-full h-full object-cover rounded-full hidden">
+                <i class="fas fa-user-circle default-icon text-2xl text-primary"></i> 
             </div>
         </div>
 
         <nav class="nav-menu">
-            <a href="index.html">Beranda</a>
-            <a href="pinjam.html">Pinjam Buku</a>
-            <a href="ebook.html">Ebook</a>
-            <a href="bookmark.html">BOOKMARK</a>
-            <a href="saran.html">Saran & Kritik</a>
+            <a href="index.html" class="hover:text-primary transition duration-150">Beranda</a>
+            <a href="pinjam.html" class="text-primary font-semibold">Pinjam Buku</a>
+            <a href="ebook.html" class="hover:text-primary transition duration-150">Ebook</a>
+            <a href="bookmark.html" class="hover:text-primary transition duration-150">BOOKMARK</a>
+            <a href="saran.html" class="hover:text-primary transition duration-150">Saran & Kritik</a>
         </nav>
     </header>
 
-    <main class="container">
-        <div class="form-container" style="max-width: 600px;">
-            <h2>Pengajuan Peminjaman Buku</h2>
-            <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 20px; padding: 10px; border: 1px solid #ddd;">
-                <img id="pinjam-cover" src="" alt="Cover" style="width: 80px; height: auto; border-radius: 4px;">
-                <div>
-                    <h3 id="pinjam-judul"></h3>
-                    <p>Buku Tersedia: <strong id="pinjam-stock" style="color: green;"></strong></p>
+    <main class="flex-grow container mx-auto p-4 md:p-8">
+        <div class="flex justify-center items-start">
+            <div class="bg-white p-6 md:p-10 rounded-xl shadow-2xl w-full max-w-xl transition duration-300">
+                <h2 class="text-3xl font-extrabold text-gray-800 mb-6 border-b-4 border-primary pb-2 flex items-center">
+                    <i class="fas fa-hand-holding-box mr-3 text-primary"></i> Pengajuan Peminjaman
+                </h2>
+
+                <div class="flex items-center space-x-4 p-4 mb-6 bg-indigo-50 border-l-4 border-primary rounded-lg shadow-sm">
+                    <img id="pinjam-cover" src="img/default_book_cover.png" alt="Cover Buku" class="w-16 h-24 object-cover rounded-md shadow-md">
+                    <div>
+                        <h3 id="pinjam-judul" class="text-xl font-bold text-gray-900">Judul Buku Sedang Dimuat...</h3>
+                        <p class="text-sm text-gray-600">Stok Tersedia: 
+                            <span id="pinjam-stock" class="font-bold text-lg text-green-600">...</span>
+                        </p>
+                    </div>
                 </div>
+                
+                <form id="form-pengajuan">
+                    <div class="mb-5">
+                        <label for="input-nama-peminjam" class="block text-sm font-medium text-gray-700 mb-2">Nama Lengkap (Otomatis):</label>
+                        <div class="relative">
+                             <i class="fas fa-user absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" id="input-nama-peminjam" value="Memuat Nama..." disabled 
+                                   class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed text-base font-semibold transition duration-150 focus:ring-primary focus:border-primary">
+                        </div>
+                       
+                        <p class="mt-2 text-xs text-gray-500">Nama ini terisi otomatis dari akun yang sedang login.</p>
+                    </div>
+
+                    <div class="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                        <h4 class="text-md font-bold text-amber-700 mb-3 flex items-center">
+                            <i class="fas fa-exclamation-circle mr-2"></i> Perhatian Ketentuan Peminjaman:
+                        </h4>
+                        
+                        <div class="space-y-2 text-sm text-gray-700">
+                            <div class="flex items-center">
+                                <i class="fas fa-clock mr-3 text-primary"></i>
+                                <span>Lama Peminjaman **Maksimal 7 hari** setelah buku diambil.</span>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-calendar-check mr-3 text-primary"></i>
+                                <span>Buku harus diambil dari Perpustakaan **dalam 3 hari** setelah pengajuan diterima.</span>
+                            </div>
+                            <div class="flex items-center font-bold text-red-600">
+                                <i class="fas fa-wallet mr-3 text-red-600"></i>
+                                <span>**Denda Rp.10.000** (awal) + **Rp.5.000/hari** jika melewati batas pinjam.</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="w-full py-3 bg-primary text-white font-bold rounded-lg shadow-lg hover:bg-indigo-700 transition duration-300 flex items-center justify-center text-lg">
+                        <i class="fas fa-paper-plane mr-2"></i> Ajukan Peminjaman
+                    </button>
+                    <p class="mt-3 text-center text-sm text-red-500 hidden" id="login-warning">Anda harus login untuk dapat mengajukan peminjaman buku.</p>
+
+                </form>
             </div>
-            
-            <form id="form-pengajuan">
-                <div class="form-group">
-                    <label>Nama Peminjam:</label>
-                    <input type="text" id="input-nama-peminjam" value="Memuat Nama..." disabled>
-                </div>
-                <div class="form-group">
-                    <label>Durasi Peminjaman:</label>
-                    <input type="text" value="Maksimal 7 hari" disabled>
-                </div>
-                <button type="submit" class="btn-primary">Ajukan Sekarang</button>
-            </form>
         </div>
     </main>
+
     <div id="profile-sidebar" class="sidebar">
         <div class="sidebar-header">
             <button id="close-sidebar" class="close-btn">&times;</button>

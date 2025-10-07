@@ -623,7 +623,7 @@ async function handlePengajuanPinjam() {
         const book = data.books.find(b => b.id === bookId);
 
         if (!book || !book.type.includes('Fisik') || book.stock <= 0) {
-            document.querySelector('.container').innerHTML = '<h2>Maaf, buku tidak tersedia atau tidak bisa dipinjam fisik.</h2>';
+            document.querySelector('.container').innerHTML = '<h2>Maaf, buku tidak tersedia.</h2>';
             return;
         }
         
@@ -986,7 +986,7 @@ async function renderTransactionStatus(type) {
     }
 }
 
-async function renderTransactionHistory(type) { /* ... (Fungsi ini tetap sama) ... */
+async function renderTransactionHistory(type) { 
     const user = getLoggedInUser();
     const container = document.getElementById(`${type}-history-list`);
     if (!user || !container) {
@@ -1395,7 +1395,7 @@ window.renderAdminBookManagement = async (bookToEdit = null) => {
         `;
     });
 
-    // Handler Tambah/Edit Buku - PERBAIKAN TOTAL DI SINI
+    // Handler Tambah/Edit Buku
     if (form) {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
