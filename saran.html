@@ -7,45 +7,100 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/profil.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-  // Konfigurasi Proyek LIBRA Library Area Anda
-  const firebaseConfig = {
-    apiKey: "AIzaSyCdVYKc6waij3pmxI9dLDSBIgbYiFIRr3A",
-    authDomain: "libra-library-area.firebaseapp.com",
-    databaseURL: "https://libra-library-area-default-rtdb.asia-southeast1.firebasedatabase.app", 
-    projectId: "libra-library-area",
-    storageBucket: "libra-library-area.firebasestorage.app",
-    messagingSenderId: "455509444693",
-    appId: "1:455509444693:web:883766ec8a49032f0b2cdc",
-  };
-  
-  // Inisialisasi Firebase
-  firebase.initializeApp(firebaseConfig);
-  
-  // Referensi ke root database. Variabel ini digunakan di js/script.js
-  const dbRef = firebase.database().ref(); 
-  
-  console.log("Firebase Realtime Database berhasil diinisialisasi.");
-</script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        // Konfigurasi Proyek LIBRA Library Area Anda (TETAP SAMA)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdVYKc6waij3pmxI9dLDSBIgbYiFIRr3A",
+            authDomain: "libra-library-area.firebaseapp.com",
+            databaseURL: "https://libra-library-area-default-rtdb.asia-southeast1.firebasedatabase.app", 
+            projectId: "libra-library-area",
+            storageBucket: "libra-library-area.firebasestorage.app",
+            messagingSenderId: "455509444693",
+            appId: "1:455509444693:web:883766ec8a49032f0b2cdc",
+        };
+        
+        // Inisialisasi Firebase
+        firebase.initializeApp(firebaseConfig);
+        const dbRef = firebase.database().ref(); 
+        
+        // Tailwind Config 
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#4f46e5', // Indigo
+                        'secondary': '#10b981', // Green
+                        'pending': '#f59e0b', // Amber
+                    },
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #10b981;
+            --pending: #f59e0b;
+        }
+        .form-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary { 
+            background-color: var(--primary); 
+            color: white; 
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn-primary:hover { background-color: #3730a3; }
+        .suggestion-item {
+            background-color: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            margin-bottom: 15px;
+            border-left: 5px solid;
+            transition: transform 0.2s ease-in-out;
+        }
+        .suggestion-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+        }
+        .reply-section {
+            background-color: #f3f4f6;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border-left: 3px solid var(--secondary);
+        }
+    </style>
 
 <script src="js/script.js"></script>
 </head>
 <body id="saran-page">
     <header class="header">
         <div id="hamburger-menu" class="hamburger order-1"><i class="fas fa-bars"></i></div>
-        
         <div class="logo order-2"><a href="index.html">Libra</a></div>
-        
         <div class="header-right-menu order-3">
             <div id="profile-icon" class="profile-icon">
                 <img id="header-profile-img" src="img/default_user.png" alt="Profil">
                 <i class="fas fa-user-circle default-icon"></i> 
             </div>
         </div>
-
         <nav class="nav-menu">
             <a href="index.html">Beranda</a>
             <a href="pinjam.html">Pinjam Buku</a>
@@ -55,61 +110,193 @@
         </nav>
     </header>
 
-    <main class="container">
+    <main class="container mx-auto p-4 md:p-8">
+        
         <div class="form-container" id="suggestion-form-area">
-            <h2 class="text-2xl font-bold text-gray-700 mb-2">Kirim Saran & Kritik</h2>
-            <p style="text-align: center; margin-bottom: 20px;">Kami menghargai masukan Anda untuk meningkatkan layanan kami.</p>
+            <h2 class="text-2xl font-bold text-gray-700 mb-2 text-center">Kirim Saran & Kritik</h2>
+            <p class="text-center text-gray-500 mb-6">Kami menghargai masukan Anda untuk meningkatkan layanan kami.</p>
 
             <form id="suggestion-form">
-                <div class="form-group">
-                    <label for="message">Saran/Kritik Anda:</label>
-                    <textarea id="message" name="message" rows="8" required placeholder="Tuliskan saran atau kritik Anda di sini..."></textarea>
+                <div class="form-group mb-4">
+                    <label for="message" class="block text-sm font-medium text-gray-700 mb-1">Saran/Kritik Anda:</label>
+                    <textarea id="message" name="message" rows="6" required 
+                        placeholder="Tuliskan saran atau kritik Anda di sini..." 
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-primary focus:border-primary"></textarea>
                 </div>
                 <button type="submit" class="btn-primary">Kirim Saran</button>
             </form>
+            <p id="form-message" class="text-center mt-3 hidden text-sm font-medium"></p>
         </div>
         
-        </main>
-        <div id="profile-sidebar" class="sidebar">
-            <div class="sidebar-header">
-                <button id="close-sidebar" class="close-btn">&times;</button>
-            </div>
-            <div class="profile-info text-center p-4">
-                <img id="sidebar-profile-img" src="img/default_user.png" alt="Foto Profil" class="w-24 h-24 rounded-full mx-auto border-4 border-white shadow-lg">
-                <h3 id="sidebar-username" class="mt-3 text-xl font-semibold">Pengunjung</h3>
-            </div>
-            
-            <nav class="sidebar-nav pt-4">
-                <a href="#" class="sidebar-link login-feature" id="link-edit-profile-photo">
-                    <i class="fas fa-camera mr-3"></i> Edit Foto Profil
-                </a>
-                
-                <a href="reset_password.html" class="sidebar-link login-feature" id="link-reset-password">
-                    <i class="fas fa-key mr-3"></i> Reset Password
-                </a>
-                
-                <hr class="my-4 border-gray-200 login-feature">
-                
-                <a href="login.html" class="sidebar-link logout-link" id="sidebar-auth-link">
-                    <i class="fas fa-sign-in-alt mr-3" id="auth-icon"></i> <span id="auth-text">Login/Daftar</span>
-                </a>]''
-            </nav>
+        <hr class="my-8 border-gray-300">
+
+        <h2 class="text-2xl font-bold text-gray-700 mb-6 text-center">Riwayat Saran & Balasan</h2>
+        <div id="user-suggestions-list" class="max-w-4xl mx-auto">
+             <p class="text-center text-gray-500">Silakan login untuk melihat riwayat saran Anda.</p>
         </div>
-        <div id="sidebar-overlay" class="sidebar-overlay"></div>
+        
+    </main>
     
-        <div id="edit-photo-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden z-[1000]">
-            <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm mx-4">
-                <h3 class="text-xl font-bold mb-4">Ubah Foto Profil</h3>
-                <form id="edit-photo-form">
-                    <input type="file" id="modal-foto-upload" accept="image/*" required class="w-full mb-4 p-2 border rounded">
-                    <div class="flex justify-end space-x-3">
-                        <button type="button" id="close-modal" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Batal</button>
-                        <button type="submit" class="px-4 py-2 bg-primary text-white rounded hover:bg-indigo-700">Simpan Foto</button>
-                    </div>
-                </form>
-            </div>
+    <div id="profile-sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <button id="close-sidebar" class="close-btn">&times;</button>
         </div>
+        <div class="profile-info text-center p-4">
+            <img id="sidebar-profile-img" src="img/default_user.png" alt="Foto Profil" class="w-24 h-24 rounded-full mx-auto border-4 border-white shadow-lg">
+            <h3 id="sidebar-username" class="mt-3 text-xl font-semibold">Pengunjung</h3>
+        </div>
+        
+        <nav class="sidebar-nav pt-4">
+            <a href="#" class="sidebar-link login-feature" id="link-edit-profile-photo">
+                <i class="fas fa-camera mr-3"></i> Edit Foto Profil
+            </a>
+            <a href="reset_password.html" class="sidebar-link login-feature" id="link-reset-password">
+                <i class="fas fa-key mr-3"></i> Reset Password
+            </a>
+            <hr class="my-4 border-gray-200 login-feature">
+            <a href="login.html" class="sidebar-link logout-link" id="sidebar-auth-link">
+                <i class="fas fa-sign-in-alt mr-3" id="auth-icon"></i> <span id="auth-text">Login/Daftar</span>
+            </a>
+        </nav>
+    </div>
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+    
+    <div id="edit-photo-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden z-[1000]">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm mx-4">
+            <h3 class="text-xl font-bold mb-4">Ubah Foto Profil</h3>
+            <form id="edit-photo-form">
+                <input type="file" id="modal-foto-upload" accept="image/*" required class="w-full mb-4 p-2 border rounded">
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="close-modal" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded hover:bg-indigo-700">Simpan Foto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
     <script src="js/profil.js"></script>
-    <script src="js/script.js"></script>
+    <script>
+        // ASUMSI: Fungsi getLoggedInUser, getAllData, formatDate, generateUniqueId tersedia di script.js atau scope global
+
+        // --- FIREBASE WRITE FUNCTION ---
+        document.getElementById('suggestion-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const message = document.getElementById('message').value;
+            // Asumsi getLoggedInUser tersedia global
+            const user = typeof getLoggedInUser === 'function' ? getLoggedInUser() : { id: 'anon', username: 'anon' }; 
+            const formMessage = document.getElementById('form-message');
+
+            if (!user || !user.id || user.id === 'anon') {
+                formMessage.textContent = "Error: Anda harus login untuk mengirim saran/kritik.";
+                formMessage.classList.remove('hidden', 'text-green-600');
+                formMessage.classList.add('text-red-600');
+                return;
+            }
+
+            // Asumsi generateUniqueId tersedia global
+            const id = typeof generateUniqueId === 'function' ? generateUniqueId() : Date.now();
+            const suggestionData = {
+                id: id,
+                userId: user.id,
+                username: user.username,
+                date: new Date().toISOString(),
+                message: message,
+                adminReply: null, // Default
+                replyDate: null,  // Default
+                status: 'pending' // Default
+            };
+
+            try {
+                // Menggunakan mekanisme array push
+                const snapshot = await dbRef.child('suggestions').once('value');
+                const currentSuggestions = snapshot.exists() ? (Array.isArray(snapshot.val()) ? snapshot.val() : Object.values(snapshot.val())) : [];
+
+                currentSuggestions.push(suggestionData);
+
+                await dbRef.child('suggestions').set(currentSuggestions);
+                
+                formMessage.textContent = "Saran/kritik berhasil dikirim! Kami akan segera meninjaunya.";
+                formMessage.classList.remove('hidden', 'text-red-600');
+                formMessage.classList.add('text-green-600');
+                
+                document.getElementById('suggestion-form').reset();
+                renderUserSuggestions(); // Reload list
+            } catch (error) {
+                console.error("Error submitting suggestion:", error);
+                formMessage.textContent = `Gagal mengirim saran: ${error.message}.`;
+                formMessage.classList.remove('hidden', 'text-green-600');
+                formMessage.classList.add('text-red-600');
+            }
+        });
+        
+        // --- RENDER FUNCTION FOR USER HISTORY ---
+        async function renderUserSuggestions() {
+            const container = document.getElementById('user-suggestions-list');
+            const user = typeof getLoggedInUser === 'function' ? getLoggedInUser() : null;
+
+            if (!user || !user.id || user.id === 'anon') {
+                container.innerHTML = `<p class="text-center text-red-500">Anda harus login untuk melihat riwayat saran Anda.</p>`;
+                return;
+            }
+            
+            container.innerHTML = '<p class="text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i> Memuat riwayat saran...</p>';
+            
+            try {
+                // Asumsi getAllData tersedia global
+                const data = typeof getAllData === 'function' ? await getAllData() : { suggestions: [] }; 
+                
+                let filteredSuggestions = data.suggestions
+                    .filter(s => s.userId === user.id);
+                
+                // Sorting: Terbaru ke Terlama
+                filteredSuggestions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                if (filteredSuggestions.length === 0) {
+                    container.innerHTML = `<p class="text-center text-gray-500">Anda belum pernah mengirim saran atau kritik.</p>`;
+                    return;
+                }
+                
+                // Render List
+                container.innerHTML = '';
+                filteredSuggestions.forEach(s => {
+                    const isReplied = s.adminReply && s.adminReply.trim().length > 0;
+                    const borderColor = isReplied ? 'var(--secondary)' : 'var(--pending)';
+                    const statusText = isReplied ? 'Sudah Dibalas' : 'Menunggu Balasan';
+                    const replyDateText = s.replyDate ? (typeof formatDate === 'function' ? formatDate(s.replyDate) : s.replyDate) : 'Tanggal Tidak Diketahui';
+                    const suggestionDateText = s.date ? (typeof formatDate === 'function' ? formatDate(s.date) : s.date) : 'Tanggal Tidak Diketahui';
+
+
+                    let replySection = '';
+                    if (isReplied) {
+                        replySection = `
+                            <div class="reply-section">
+                                <p class="font-bold text-sm text-gray-700 mb-1 flex items-center"><i class="fas fa-user-shield mr-2 text-secondary"></i> Balasan Admin (${replyDateText})</p>
+                                <p class="text-gray-600 whitespace-pre-wrap">${s.adminReply}</p>
+                            </div>
+                        `;
+                    }
+                    
+                    container.innerHTML += `
+                        <div class="suggestion-item" style="border-left-color: ${borderColor};">
+                            <div class="flex justify-between items-start mb-2">
+                                <p class="text-xs text-gray-500">${suggestionDateText}</p>
+                                <span class="text-xs font-semibold px-2 py-1 rounded-full ${isReplied ? 'bg-green-100 text-secondary' : 'bg-yellow-100 text-pending'}">${statusText}</span>
+                            </div>
+                            <p class="text-gray-800 font-medium whitespace-pre-wrap"><strong>Saran/Kritik Anda:</strong><br>${s.message}</p>
+                            ${replySection}
+                        </div>
+                    `;
+                });
+
+            } catch (error) {
+                console.error("Render Error:", error);
+                container.innerHTML = `<p class="text-center text-red-500">Gagal memuat riwayat saran: ${error.message}</p>`;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            renderUserSuggestions();
+        });
+    </script>
 </body>
 </html>

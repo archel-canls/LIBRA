@@ -1,0 +1,125 @@
+ /* Variabel CSS (Asumsi ada di style.css, diulang untuk keamanan) */
+ :root {
+    --primary-color: #d000b4;
+    --primary-color-light: #e6f2ff;
+    --accent-color: #ffc107;
+    --danger-color: #dc3545;
+}
+
+/* CSS Admin Layout */
+.admin-layout {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 20px auto;
+}
+.admin-nav {
+    flex: 0 0 250px;
+    background-color: #ffffff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    height: fit-content;
+}
+.admin-nav button {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 8px;
+    background: none;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: bold;
+}
+.admin-nav button:hover {
+    background-color: var(--primary-color-light);
+    color: var(--primary-color);
+}
+.admin-nav button.active-tab {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+.admin-content {
+    flex-grow: 1;
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+.admin-card {
+    border: 1px solid #eee;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    border-left: 5px solid var(--primary-color);
+}
+.btn-action {
+    padding: 5px 10px;
+    border-radius: 4px;
+    margin-left: 5px;
+    font-size: 0.9em;
+}
+.btn-action.acc { background-color: #28a745; color: white; border: none; }
+.btn-action.pinjam { background-color: var(--accent-color); color: white; border: none; }
+.btn-action.tolak { background-color: var(--danger-color); color: white; border: none; }
+.btn-action.kembali { background-color: #17a2b8; color: white; border: none; }
+
+/* CSS Khusus Manajemen Buku (Diadaptasi dari kode sebelumnya) */
+.container { 
+    max-width: 100%; /* Disesuaikan agar fit di admin-content */
+    padding: 0; 
+    border: none; 
+    box-shadow: none;
+    margin: 0;
+}
+.form-group { margin-bottom: 15px; }
+label { display: block; margin-bottom: 5px; font-weight: bold; }
+input[type="text"], input[type="number"], textarea, select { 
+    width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; 
+}
+input[type="file"] { 
+    border: 1px solid #ddd; padding: 7px; background-color: #f9f9f9; border-radius: 4px; 
+}
+button[type="submit"], button[type="button"], #refreshBookListButton { 
+    padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; 
+    transition: background-color 0.2s;
+}
+button[type="submit"] { background-color: var(--primary-color); color: white; }
+button[type="submit"]:hover:not(:disabled) { background-color: #a00080; } /* Warna hover disesuaikan */
+#refreshBookListButton { 
+    background-color: #007bff; 
+    color: white; 
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+#refreshBookListButton:hover { 
+    background-color: #0056b3; 
+}
+
+
+table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+th, td { border: 1px solid #ddd; padding: 10px; text-align: left; vertical-align: middle; }
+.action-btns button { padding: 5px 10px; font-size: 0.9em; margin: 2px 0; }
+.cover-img { width: 50px; height: auto; display: block; margin: auto; } 
+
+/* Responsif */
+@media (max-width: 768px) {
+    .admin-layout {
+        flex-direction: column;
+        padding: 10px;
+    }
+    .admin-nav {
+        flex: none;
+        width: 100%;
+        box-shadow: none;
+    }
+    .admin-content {
+        padding: 10px;
+    }
+}

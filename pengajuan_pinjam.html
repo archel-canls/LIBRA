@@ -50,18 +50,71 @@
     </script>
     
     <script>
+        // --- UTILITY BARU: FORMAT RUPIAH ---
+        function formatRupiah(angka) {
+            if (angka === undefined || angka === null) return 'Rp.0';
+            const reverse = String(angka).split('').reverse().join('');
+            const ribuan = reverse.match(/\d{1,3}/g);
+            const result = ribuan.join('.').split('').reverse().join('');
+            return `Rp.${result}`;
+        }
+
+        // --- UTILITY: AMBIL ID BUKU DARI URL ---
+        function getBookIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
+        }
+
+        // --- FUNGSI BARU: MUAT DATA BUKU (JUDUL, COVER, STOK, DAN DENDA) ---
+        async function loadBookData() {
+            const bookId = getBookIdFromUrl();
+            
+            // Tampilkan pesan error jika ID tidak ada
+            if (!bookId) {
+                document.getElementById('pinjam-judul').textContent = 'Error: ID buku tidak ditemukan!';
+                document.getElementById('pinjam-stock').textContent = '-';
+                // Optional: Redirect
+                // window.location.href = 'index.html'; 
+                return;
+            }
+
+            try {
+                const booksRef = dbRef.child('books');
+                const snapshot = await booksRef.child(bookId).once('value');
+
+                if (snapshot.exists()) {
+                    const book = snapshot.val();
+                    
+                    // 1. Update book details display
+                    document.getElementById('pinjam-judul').textContent = book.title;
+                    document.getElementById('pinjam-stock').textContent = book.stock;
+                    document.getElementById('pinjam-cover').src = book.cover || 'img/default_book_cover.png';
+
+                    // 2. Update fine amount (Denda Hilang)
+                    const fineAmount = book.fineAmount || 0; 
+                    const formattedFine = formatRupiah(fineAmount);
+                    
+                    const dendaElement = document.getElementById('pinjam-denda-hilang');
+                    if (dendaElement) {
+                         dendaElement.textContent = formattedFine;
+                    }
+
+                } else {
+                    document.getElementById('pinjam-judul').textContent = `Error: Buku ID ${bookId} tidak ditemukan!`;
+                    document.getElementById('pinjam-stock').textContent = '0';
+                    // Optional: Redirect
+                    // alert(`Buku dengan ID ${bookId} tidak ditemukan.`);
+                    // window.location.href = 'index.html'; 
+                }
+
+            } catch (error) {
+                console.error("Error loading book data:", error);
+                document.getElementById('pinjam-judul').textContent = 'Error koneksi server.';
+            }
+        }
+
+
         // PASTIKAN FUNGSI getLoggedInUser ADA DI js/script.js
-        // Ini adalah MOCKUP jika Anda belum implementasi getLoggedInUser()
-        // function getLoggedInUser() {
-        //     // MOCK: Ganti dengan logika session/auth Anda yang sebenarnya
-        //     return { name: 'Siti Aisyah', username: 'siti_a', id: 'user123' }; 
-        // }
-
-
-        /**
-         * Mengisi field nama peminjam otomatis berdasarkan user yang sedang login.
-         * MODIFIKASI: Menggunakan user.name, bukan user.username.
-         */
         function autoFillUsername() {
             // Asumsikan fungsi ini ada di js/script.js
             if (typeof getLoggedInUser !== 'function') {
@@ -75,8 +128,7 @@
             const loginWarning = document.getElementById('login-warning');
 
             if (inputNama) {
-                if (user && user.name) { // <<< MENGGUNAKAN user.name
-                    // Status: SUDAH LOGIN & ADA NAMA LENGKAP
+                if (user && user.name) {
                     inputNama.value = user.name; 
                     if (submitBtn) {
                         submitBtn.disabled = false;
@@ -87,9 +139,7 @@
                     if(loginWarning) loginWarning.classList.add('hidden');
 
                 } else if (user) {
-                    // Status: LOGIN tapi hanya punya username (fallback)
                     inputNama.value = user.username || 'User ID: ' + user.id; 
-                    // Tombol tetap aktif karena user sudah login, meski nama lengkap kosong
                     if (submitBtn) {
                         submitBtn.disabled = false;
                         submitBtn.textContent = 'Ajukan Peminjaman';
@@ -99,13 +149,12 @@
                     if(loginWarning) loginWarning.classList.add('hidden');
 
                 } else {
-                    // Status: BELUM LOGIN
                     inputNama.value = 'Silakan Login Dulu';
                     if (submitBtn) {
-                         submitBtn.disabled = true;
-                         submitBtn.textContent = 'Login untuk Mengajukan';
-                         submitBtn.classList.remove('bg-primary', 'hover:bg-indigo-700');
-                         submitBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                           submitBtn.disabled = true;
+                           submitBtn.textContent = 'Login untuk Mengajukan';
+                           submitBtn.classList.remove('bg-primary', 'hover:bg-indigo-700');
+                           submitBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
                     }
                     if(loginWarning) loginWarning.classList.remove('hidden');
                 }
@@ -113,6 +162,10 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Memuat detail buku (termasuk denda)
+            loadBookData();
+            
+            // Mengisi nama peminjam
             if (document.getElementById('input-nama-peminjam')) {
                 autoFillUsername();
             }
@@ -122,24 +175,21 @@
     <script src="js/profil.js"></script>
 </head>
 <body id="pengajuan-pinjam-page" class="bg-gray-bg min-h-screen flex flex-col">
-    <header class="header bg-white shadow-md sticky top-0 z-40">
-        <div id="hamburger-menu" class="hamburger order-1 text-gray-700 hover:text-primary transition duration-150"><i class="fas fa-bars"></i></div>
-        
-        <div class="logo order-2 text-2xl font-bold text-primary"><a href="index.html">📚 Libra</a></div>
-        
+    <header class="header">
+        <div id="hamburger-menu" class="hamburger order-1"><i class="fas fa-bars"></i></div>
+        <div class="logo order-2"><a href="index.html">Libra</a></div>
         <div class="header-right-menu order-3">
-            <div id="profile-icon" class="profile-icon cursor-pointer flex items-center justify-center w-10 h-10 rounded-full border-2 border-primary hover:bg-primary/10 transition duration-150">
-                <img id="header-profile-img" src="img/default_user.png" alt="Profil" class="w-full h-full object-cover rounded-full hidden">
-                <i class="fas fa-user-circle default-icon text-2xl text-primary"></i> 
+            <div id="profile-icon" class="profile-icon">
+                <img id="header-profile-img" src="img/default_user.png" alt="Profil">
+                <i class="fas fa-user-circle default-icon"></i> 
             </div>
         </div>
-
         <nav class="nav-menu">
-            <a href="index.html" class="hover:text-primary transition duration-150">Beranda</a>
-            <a href="pinjam.html" class="text-primary font-semibold">Pinjam Buku</a>
-            <a href="ebook.html" class="hover:text-primary transition duration-150">Ebook</a>
-            <a href="bookmark.html" class="hover:text-primary transition duration-150">BOOKMARK</a>
-            <a href="saran.html" class="hover:text-primary transition duration-150">Saran & Kritik</a>
+            <a href="index.html">Beranda</a>
+            <a href="pinjam.html">Pinjam Buku</a>
+            <a href="ebook.html">Ebook</a>
+            <a href="bookmark.html">BOOKMARK</a>
+            <a href="saran.html">Saran & Kritik</a>
         </nav>
     </header>
 
@@ -164,11 +214,11 @@
                     <div class="mb-5">
                         <label for="input-nama-peminjam" class="block text-sm font-medium text-gray-700 mb-2">Nama Lengkap (Otomatis):</label>
                         <div class="relative">
-                             <i class="fas fa-user absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                               <i class="fas fa-user absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                             <input type="text" id="input-nama-peminjam" value="Memuat Nama..." disabled 
-                                   class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed text-base font-semibold transition duration-150 focus:ring-primary focus:border-primary">
+                                    class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed text-base font-semibold transition duration-150 focus:ring-primary focus:border-primary">
                         </div>
-                       
+                        
                         <p class="mt-2 text-xs text-gray-500">Nama ini terisi otomatis dari akun yang sedang login.</p>
                     </div>
 
@@ -180,17 +230,22 @@
                         <div class="space-y-2 text-sm text-gray-700">
                             <div class="flex items-center">
                                 <i class="fas fa-clock mr-3 text-primary"></i>
-                                <span>Lama Peminjaman **Maksimal 7 hari** setelah buku diambil.</span>
+                                <span>Lama <strong>Peminjaman Maksimal 7 hari</strong> setelah buku diambil.</span>
                             </div>
                             <div class="flex items-center">
                                 <i class="fas fa-calendar-check mr-3 text-primary"></i>
-                                <span>Buku harus diambil dari Perpustakaan **dalam 3 hari** setelah pengajuan diterima.</span>
+                                <span>Buku <strong>harus diambil</strong> dari Perpustakaan <strong>dalam 3 hari</strong> setelah pengajuan diterima.</span>
                             </div>
                             <div class="flex items-center font-bold text-red-600">
                                 <i class="fas fa-wallet mr-3 text-red-600"></i>
-                                <span>**Denda Rp.10.000** (awal) + **Rp.5.000/hari** jika melewati batas pinjam.</span>
+                                <span></strong>Denda Rp.10.000 (awal) + Rp.5.000/hari jika melewati batas pinjam.</strong></span>
                             </div>
-                        </div>
+                            
+                            <div class="flex items-center font-bold text-red-600">
+                                <i class="fas fa-wallet mr-3 text-red-600"></i>
+                                <span></strong>Jika buku ini hilang harus diganti dengan buku yang sama persis atau denda <span id="pinjam-denda-hilang">Memuat...</span></strong></span>
+                            </div>
+                            </div>
                     </div>
                     
                     <button type="submit" class="w-full py-3 bg-primary text-white font-bold rounded-lg shadow-lg hover:bg-indigo-700 transition duration-300 flex items-center justify-center text-lg">

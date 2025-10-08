@@ -691,6 +691,8 @@ async function handlePengajuanPinjam() {
     }
 }
 
+// ... (Logika yang sudah ada: getLoggedInUser, getAllData, setDatabaseData, dll.)
+
 // Variabel global untuk menyimpan data state ebook
 let currentBookId = null;
 let currentPage = 1;
@@ -865,14 +867,14 @@ async function renderEbookHistory() {
             const date = new Date(history.lastAccessDate).toLocaleDateString('id-ID', {
                 year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
             });
-
+            
             // Tentukan URL untuk lanjut membaca
             const readUrl = `baca_buku.html?id=${history.bookId}&page=${history.lastPage}`;
-            
+
             const historyItem = document.createElement('a'); // Ganti div menjadi <a>
             historyItem.href = readUrl; // Seluruh elemen menjadi tautan
             historyItem.className = 'history-item p-4 mb-3 border-b border-gray-200 block hover:bg-indigo-50 transition duration-150 ease-in-out cursor-pointer rounded-lg'; // Menambahkan class block dan style hover baru
-
+            
             historyItem.innerHTML = `
                 <div class="flex justify-between items-center">
                     <div>
@@ -882,17 +884,16 @@ async function renderEbookHistory() {
                         <p class="text-gray-600 mt-1">Terakhir dibaca: <span class="font-bold text-primary">Halaman ${history.lastPage}</span></p>
                         <p class="text-sm text-gray-400">Akses terakhir: ${date}</p>
                     </div>
-                    <i class="fas fa-book-reader text-2xl text-primary"></i>
-                </div>
+                    <i class="fas fa-book-reader text-2xl text-primary"></i> </div>
             `;
             historyListContainer.appendChild(historyItem);
         });
+
     } catch (error) {
         historyListContainer.innerHTML = `<p class="text-red-500">Gagal memuat riwayat: ${error.message}</p>`;
     }
-}
-// --- LOGIKA STATUS & HISTORY PINJAM/EBOOK ---
-async function renderTransactionStatus(type) {
+}// --- LOGIKA STATUS & HISTORY PINJAM/EBOOK ---
+async function renderTransactionStatus(type) { 
     const user = getLoggedInUser();
     const container = document.getElementById(`${type}-status-list`);
     if (!user || !container) {
@@ -901,25 +902,26 @@ async function renderTransactionStatus(type) {
     }
 
     try {
-        const data = await getAllData();
+        const data = await getAllData(); 
+        
         const userTransactions = data.transactions
-            .filter(t => t.userId === user.id && t.type === type && (t.status === 'diajukan' || t.status === 'diacc' || t.status === 'dipinjam'))
+            .filter(t => t.userId === user.id && t.type === type && (t.status === 'diajukan' || t.status === 'diacc' || t.status === 'dipinjam')) 
             .sort((a, b) => new Date(b.date) - new Date(a.date));
-
+        
         const canceledRejected = data.transactions
             .filter(t => t.userId === user.id && t.type === type && (t.status === 'ditolak' || t.status === 'dibatalkan'))
             .sort((a, b) => new Date(b.date) - new Date(a.date));
 
         container.innerHTML = '<h3>Transaksi Aktif (Diajukan / DiACC / Dipinjam)</h3>';
 
-        if (userTransactions.length === 0) {
+        if (userTransactions.length === 0) { 
             container.innerHTML += '<p style="text-align: center;">Anda belum memiliki transaksi aktif.</p>';
         }
 
         userTransactions.forEach(t => {
             const book = data.books.find(b => b.id === t.bookId);
             if (!book) return;
-
+            
             const coverSrc = book.cover && book.cover.startsWith('data:image') ? book.cover : (book.cover || 'img/default.jpg');
             let statusClass = `status-${t.status.toLowerCase()}`;
             let statusText = t.status.charAt(0).toUpperCase() + t.status.slice(1);
@@ -929,14 +931,12 @@ async function renderTransactionStatus(type) {
             let diffDays = null;
             let activityList = '';
 
-            if (dueDate) {
-                diffDays = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
-            }
+            if (dueDate) { diffDays = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24)); }
 
             if (t.status === 'diacc' && dueDate) {
                 infoStatus = `Waktu ambil tersisa: ${Math.max(0, diffDays)} hari.`;
-                statusClass = diffDays <= 0 ? 'status-telat' : 'status-diacc';
-                if (diffDays <= 0) infoStatus = 'Dibatalkan otomatis karena waktu ambil habis.';
+                statusClass = diffDays <= 0 ? 'status-telat' : 'status-diacc'; 
+                if (diffDays <= 0) infoStatus = 'Dibatalkan otomatis karena waktu ambil habis.'; 
             } else if (t.status === 'dipinjam' && dueDate) {
                 if (diffDays < 0) {
                     statusClass = 'status-telat';
@@ -971,11 +971,12 @@ async function renderTransactionStatus(type) {
         if (canceledRejected.length > 0) {
             container.innerHTML += '<h3 style="margin-top: 20px;">Transaksi Ditolak/Dibatalkan</h3>';
             canceledRejected.forEach(t => {
-                const book = data.books.find(b => b.id === t.bookId);
-                if (!book) return;
-                const activityList = t.activity.map(a => `<li>[${formatDate(a.date)}] ${a.action}</li>`).join('');
-                const coverSrc = book.cover && book.cover.startsWith('data:image') ? book.cover : (book.cover || 'img/default.jpg');
-                container.innerHTML += `
+                 const book = data.books.find(b => b.id === t.bookId);
+                 if (!book) return;
+                 const activityList = t.activity.map(a => `<li>[${formatDate(a.date)}] ${a.action}</li>`).join('');
+                 const coverSrc = book.cover && book.cover.startsWith('data:image') ? book.cover : (book.cover || 'img/default.jpg');
+
+                 container.innerHTML += `
                     <div class="status-card" style="opacity: 0.7;">
                         <img src="${coverSrc}" alt="Cover">
                         <div>
@@ -992,13 +993,12 @@ async function renderTransactionStatus(type) {
                 `;
             });
         }
-
     } catch (error) {
         container.innerHTML = `<p style="text-align: center; color: var(--danger-color);">Gagal memuat status: ${error.message}</p>`;
     }
 }
 
-async function renderTransactionHistory(type) {
+async function renderTransactionHistory(type) { 
     const user = getLoggedInUser();
     const container = document.getElementById(`${type}-history-list`);
     if (!user || !container) {
@@ -1009,59 +1009,46 @@ async function renderTransactionHistory(type) {
     try {
         const data = await getAllData();
         container.innerHTML = '';
-
+        
         if (type === 'pinjam') {
             const history = data.transactions
-                .filter(t => t.userId === user.id && t.type === type && t.status === 'dikembalikan')
+                .filter(t => t.userId === user.id && t.type === type && t.status === 'dikembalikan') 
                 .sort((a, b) => new Date(b.date) - new Date(a.date));
 
-            if (history.length === 0) {
-                container.innerHTML = '<p style="text-align: center;">Anda belum memiliki history peminjaman yang sukses.</p>';
-                return;
-            }
-
+            if (history.length === 0) { container.innerHTML = '<p style="text-align: center;">Anda belum memiliki history peminjaman yang sukses.</p>'; return; }
+            
             history.forEach(t => {
                 const book = data.books.find(b => b.id === t.bookId);
                 if (!book) return;
                 const coverSrc = book.cover && book.cover.startsWith('data:image') ? book.cover : (book.cover || 'img/default.jpg');
-                
-                container.innerHTML += `
-                    <div class="status-card">
-                        <img src="${coverSrc}" alt="Cover">
-                        <div>
-                            <h4>${book.title} (${book.year})</h4>
-                            <p style="font-size: 0.9em;">Dipinjam: ${formatDate(t.date)}</p>
-                            <p style="font-size: 0.9em;">Dikembalikan: <strong>${formatDate(t.returnedDate)}</strong></p>
-                        </div>
+                container.innerHTML += `<div class="status-card">
+                    <img src="${coverSrc}" alt="Cover">
+                    <div>
+                        <h4>${book.title} (${book.year})</h4>
+                        <p style="font-size: 0.9em;">Dipinjam: ${formatDate(t.date)}</p>
+                        <p style="font-size: 0.9em;">Dikembalikan: <strong>${formatDate(t.returnedDate)}</strong></p>
                     </div>
-                `;
+                </div>`;
             });
-
         } else if (type === 'ebook') {
             const ebookHistory = data.ebookHistory
                 .filter(eh => eh.userId === user.id)
                 .sort((a, b) => new Date(b.lastAccessDate) - new Date(a.lastAccessDate));
 
-            if (ebookHistory.length === 0) {
-                container.innerHTML = '<p style="text-align: center;">Anda belum memiliki history membaca ebook.</p>';
-                return;
-            }
-
+            if (ebookHistory.length === 0) { container.innerHTML = '<p style="text-align: center;">Anda belum memiliki history membaca ebook.</p>'; return; }
+            
             ebookHistory.forEach(eh => {
                 const book = data.books.find(b => b.id === eh.bookId);
                 if (!book) return;
                 const coverSrc = book.cover && book.cover.startsWith('data:image') ? book.cover : (book.cover || 'img/default.jpg');
-
-                container.innerHTML += `
-                    <div class="status-card" style="cursor: pointer;" onclick="window.location.href='baca_buku.html?id=${book.id}'">
-                        <img src="${coverSrc}" alt="Cover">
-                        <div>
-                            <h4>${book.title}</h4>
-                            <p style="font-size: 0.9em;">Terakhir dibaca di Halaman: <strong>${eh.lastPage}</strong></p>
-                            <p style="font-size: 0.9em;">Akses terakhir: ${formatDate(eh.lastAccessDate)}</p>
-                        </div>
+                container.innerHTML += `<div class="status-card" style="cursor: pointer;" onclick="window.location.href='baca_buku.html?id=${book.id}'">
+                    <img src="${coverSrc}" alt="Cover">
+                    <div>
+                        <h4>${book.title}</h4>
+                        <p style="font-size: 0.9em;">Terakhir dibaca di Halaman: <strong>${eh.lastPage}</strong></p>
+                        <p style="font-size: 0.9em;">Akses terakhir: ${formatDate(eh.lastAccessDate)}</p>
                     </div>
-                `;
+                </div>`;
             });
         }
     } catch (error) {
@@ -1069,12 +1056,13 @@ async function renderTransactionHistory(type) {
     }
 }
 
+
 // --- LOGIKA SARAN & KRITIK USER ---
-function handleSuggestionForm() {
+function handleSuggestionForm() { 
     const user = getLoggedInUser();
     const formArea = document.getElementById('suggestion-form-area');
     const form = document.getElementById('suggestion-form');
-
+    
     if (!user) {
         if(formArea) formArea.innerHTML = '<p class="text-center" style="text-align: center;">Harap login untuk mengirim saran dan kritik.</p>';
         return;
@@ -1085,9 +1073,10 @@ function handleSuggestionForm() {
             e.preventDefault();
             const message = form.message.value;
             if (!message) return;
-
+            
             try {
                 const data = await getAllData();
+
                 data.suggestions.push({
                     id: Date.now(),
                     userId: user.id,
@@ -1095,9 +1084,8 @@ function handleSuggestionForm() {
                     message: message,
                     date: new Date().toISOString()
                 });
-                
-                await setDatabaseData('suggestions', data.suggestions);
 
+                await setDatabaseData('suggestions', data.suggestions);
                 alert('Saran/Kritik berhasil dikirim! Terima kasih.');
                 form.reset();
             } catch (error) {
@@ -1107,335 +1095,550 @@ function handleSuggestionForm() {
     }
 }
 
-// --- FUNGSI ADMIN TRANSAKSI BARU ---
-async function adminProcessTransaction(transactionId, action) {
-    try {
-        const data = await getAllData();
-        const transactionIndex = data.transactions.findIndex(t => t.id === transactionId);
-        
-        if (transactionIndex === -1) {
-            return { success: false, message: 'Transaksi tidak ditemukan.' };
-        }
-        
-        const transaction = data.transactions[transactionIndex];
-        const bookIndex = data.books.findIndex(b => b.id === transaction.bookId);
-        const book = data.books[bookIndex];
-        const now = new Date();
-        const activity = { date: now.toISOString(), action: '' };
-
-        if (!book) {
-             return { success: false, message: `Buku dengan ID ${transaction.bookId} tidak ditemukan.` };
-        }
-        
-        // Cek apakah buku adalah fisik, karena transaksi pinjam hanya untuk buku fisik
-        if (!book.type.includes('Fisik')) {
-            return { success: false, message: 'Ini bukan transaksi buku fisik.' };
-        }
-
-
-        let stockChange = 0; // -1, 0, atau +1
-
-        switch (action) {
-            case 'acc':
-                if (transaction.status !== 'diajukan') {
-                    return { success: false, message: `Status transaksi harus 'Diajukan' untuk di-ACC (Saat ini: ${transaction.status}).` };
-                }
-                if (book.stock <= 0) {
-                    return { success: false, message: `Stok buku ${book.title} habis. Tidak bisa di-ACC.` };
-                }
-                
-                // Kurangi stok dan set due date untuk pengambilan
-                data.books[bookIndex].stock -= 1;
-                stockChange = -1;
-                
-                transaction.status = 'diacc';
-                // Batas ambil adalah DUE_DATE_ACC_MAX (3) hari
-                const dueDateAcc = new Date(now.getTime() + DUE_DATE_ACC_MAX * 24 * 60 * 60 * 1000);
-                transaction.dueDate = dueDateAcc.toISOString();
-                activity.action = `Disetujui (ACC) oleh Admin. Batas pengambilan buku fisik: ${DUE_DATE_ACC_MAX} hari.`;
-                break;
-
-            case 'tolak':
-                if (transaction.status !== 'diajukan') {
-                     return { success: false, message: `Status transaksi harus 'Diajukan' untuk ditolak (Saat ini: ${transaction.status}).` };
-                }
-                transaction.status = 'ditolak';
-                activity.action = 'Ditolak oleh Admin.';
-                // Tidak ada perubahan stok
-                break;
-                
-            case 'pinjam': // User datang mengambil buku
-                if (transaction.status !== 'diacc') {
-                     return { success: false, message: `Status transaksi harus 'DiACC' untuk diserahkan/dipinjam (Saat ini: ${transaction.status}).` };
-                }
-                
-                transaction.status = 'dipinjam';
-                // Batas pengembalian adalah DUE_DATE_PINJAM_MAX (7) hari dari sekarang
-                const dueDatePinjam = new Date(now.getTime() + DUE_DATE_PINJAM_MAX * 24 * 60 * 60 * 1000);
-                transaction.dueDate = dueDatePinjam.toISOString();
-                activity.action = `Buku fisik diserahkan kepada peminjam. Batas pengembalian: ${DUE_DATE_PINJAM_MAX} hari.`;
-                // Stok sudah terpotong saat 'acc', jadi tidak ada perubahan stok lagi.
-                break;
-
-            case 'kembali':
-                if (transaction.status !== 'dipinjam') {
-                    return { success: false, message: `Status transaksi harus 'Dipinjam' untuk dikembalikan (Saat ini: ${transaction.status}).` };
-                }
-                
-                // Kembalikan stok
-                if (book.stock < book.stockMax) {
-                    data.books[bookIndex].stock += 1;
-                    stockChange = 1;
-                }
-                
-                transaction.status = 'dikembalikan';
-                transaction.returnedDate = now.toISOString();
-                // Hitung denda jika ada (asumsi tidak ada logic denda kompleks di sini, hanya status)
-                activity.action = 'Buku fisik berhasil dikembalikan.';
-                break;
-
-            case 'batal':
-                 if (transaction.status !== 'diajukan' && transaction.status !== 'diacc') {
-                     return { success: false, message: `Pembatalan hanya bisa dilakukan pada status 'Diajukan' atau 'DiACC' (Saat ini: ${transaction.status}).` };
-                }
-                
-                // Jika status 'diacc', stok sudah terpotong, maka harus dikembalikan.
-                if (transaction.status === 'diacc') {
-                     if (book.stock < book.stockMax) {
-                        data.books[bookIndex].stock += 1;
-                        stockChange = 1;
-                    }
-                    activity.action = 'Dibatalkan oleh Admin. Stok dikembalikan.';
-                } else {
-                     activity.action = 'Dibatalkan oleh Admin.';
-                }
-                
-                transaction.status = 'dibatalkan';
-                break;
-
-            default:
-                return { success: false, message: 'Aksi tidak valid.' };
-        }
-        
-        // Tambahkan log aktivitas baru
-        if (!transaction.activity) transaction.activity = [];
-        transaction.activity.push(activity);
-
-        // Update transaksi di array data
-        data.transactions[transactionIndex] = transaction; 
-        
-        // Simpan semua data yang telah diubah kembali ke Firebase (transaksi dan buku)
-        await setDatabaseData('/', data);
-        
-        return { success: true, message: `Transaksi ID ${transactionId} berhasil diubah status menjadi '${transaction.status}'.`, newStock: data.books[bookIndex].stock };
-
-    } catch (error) {
-        console.error('Error processing transaction:', error);
-        return { success: false, message: `Gagal memproses transaksi: ${error.message}` };
-    }
-}
-
-// --- LOGIKA ADMIN MANAJEMEN TRANSAKSI (BARU/MODIFIKASI) ---
-async function renderAdminTransactionManagement(statusFilter = 'all') {
-    const user = getLoggedInUser();
-    const container = document.getElementById('admin-transaction-content');
-    if (!user || user.role !== 'admin' || !container) return;
-
-    container.innerHTML = 'Memuat data transaksi...';
-
-    try {
-        const data = await getAllData();
-        
-        let filteredTransactions = data.transactions.filter(t => t.type === 'pinjam');
-
-        // 1. Penerapan Filter Status
-        if (statusFilter !== 'all') {
-            filteredTransactions = filteredTransactions.filter(t => t.status === statusFilter);
-        }
-        
-        // 2. Penerapan Sorting: Pengajuan Terlama ke Terbaru (a - b)
-        filteredTransactions.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-
-        if (filteredTransactions.length === 0) {
-            const filterName = statusFilter === 'all' ? 'Semua' : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1);
-            container.innerHTML = `<p class="text-center p-4">Tidak ada transaksi dengan status: **${filterName}**</p>`;
-            return;
-        }
-
-        let htmlContent = `<div class="transaction-list">`;
-
-        for (const t of filteredTransactions) {
-            const book = data.books.find(b => b.id === t.bookId);
-            const borrower = data.users.find(u => u.id === t.userId);
-            if (!book || !borrower) continue; 
-            
-            const bookTitle = book.title;
-            const borrowerName = borrower.name;
-            const statusText = t.status.charAt(0).toUpperCase() + t.status.slice(1);
-            const date = formatDate(t.date);
-
-            const statusClass = `status-${t.status.toLowerCase()}`;
-            const coverSrc = book.cover && book.cover.startsWith('data:image') ? book.cover : (book.cover || 'img/default.jpg');
-            
-            // Tombol Aksi
-            let actionButtons = '';
-            // Gunakan window.setTransactionFilter untuk me-refresh tab yang sedang aktif
-            const processCall = (action) => `adminProcessTransaction(${t.id}, '${action}').then(res => { 
-                if(res.success) { 
-                    alert(res.message); 
-                    const activeFilterButton = document.querySelector('#transaction-filter-tabs button.admin-tab-active');
-                    if (activeFilterButton) {
-                        setTransactionFilter(activeFilterButton, activeFilterButton.dataset.filter); // Refresh tab aktif
-                    } else {
-                        // Default fallback jika tidak ada tab aktif
-                        renderAdminTransactionManagement('all'); 
-                    }
-                } else { 
-                    alert('Gagal: ' + res.message); 
-                } 
-            }).catch(err => alert('Error: ' + err.message))`;
-
-
-            if (t.status === 'diajukan') {
-                actionButtons = `
-                    <button class="btn btn-sm btn-success" onclick="${processCall('acc')}">ACC Pinjam</button>
-                    <button class="btn btn-sm btn-danger" onclick="${processCall('tolak')}">Tolak</button>
-                `;
-            } else if (t.status === 'diacc') {
-                actionButtons = `
-                    <button class="btn btn-sm btn-primary" onclick="${processCall('pinjam')}">Serahkan Buku (Pinjam)</button>
-                    <button class="btn btn-sm btn-danger" onclick="${processCall('batal')}">Batalkan ACC</button>
-                `;
-            } else if (t.status === 'dipinjam') {
-                actionButtons = `
-                    <button class="btn btn-sm btn-success" onclick="${processCall('kembali')}">Buku Kembali</button>
-                `;
-            } else if (t.status === 'ditolak' || t.status === 'dibatalkan' || t.status === 'dikembalikan') {
-                actionButtons = `<span class="text-sm text-gray-500">Aksi selesai</span>`;
-            }
-            
-            // Log Aktivitas
-            let activityList = t.activity ? t.activity.map(a => `<li>[${formatDate(a.date)}] ${a.action}</li>`).join('') : '<li>Tidak ada log aktivitas.</li>';
-
-
-            htmlContent += `
-                <div class="admin-card transaction-item" style="border-left: 5px solid ${t.status === 'diajukan' ? 'var(--warning-color)' : t.status === 'dipinjam' ? 'var(--success-color)' : '#ccc'};">
-                    <div style="display: flex; gap: 15px;">
-                        <img src="${coverSrc}" alt="Cover" style="width: 50px; height: 75px; object-fit: cover; border-radius: 3px;">
-                        <div>
-                            <p class="mb-1"><strong>ID Transaksi: ${t.id}</strong></p>
-                            <h4 style="margin: 0; font-size: 1.1em;">${bookTitle}</h4>
-                            <p style="margin: 0; font-size: 0.9em;">Peminjam: <strong>${borrowerName}</strong></p>
-                            <p style="margin: 0; font-size: 0.9em;">Tanggal Ajuan: ${date}</p>
-                            <p style="margin: 5px 0 10px 0;">Status: <span class="badge ${statusClass}">${statusText.toUpperCase()}</span> ${t.dueDate ? ` | Batas: ${formatDate(t.dueDate)}` : ''}</p>
-                            <div class="admin-actions">
-                                ${actionButtons}
-                            </div>
-                            <details style="margin-top: 10px; font-size: 0.85em;">
-                                <summary style="cursor: pointer;">Lihat Log Aktivitas</summary>
-                                <ul style="margin-left: 20px; list-style-type: disc;">${activityList}</ul>
-                            </details>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-        
-        htmlContent += `</div>`;
-        container.innerHTML = htmlContent;
-        
-    } catch (error) {
-        console.error("Error rendering admin transactions:", error);
-        container.innerHTML = `<p class="text-center text-red-500">Gagal memuat transaksi: ${error.message}</p>`;
-    }
-}
-
-
-// --- LOGIKA ADMIN DASHBOARD (MODIFIKASI) ---
+// --- LOGIKA ADMIN DASHBOARD ---
 function renderAdminDashboard() {
     const user = getLoggedInUser();
-    const mainContent = document.querySelector('.container') || document.querySelector('main');
+    if (!user || user.role !== 'admin') { window.location.href = 'login.html'; return; }
 
-    if (!user || user.role !== 'admin' || !mainContent) {
-        window.location.href = 'login.html';
+    window.showAdminTab = (tabId) => {
+        document.querySelectorAll('.admin-tab-content').forEach(el => el.style.display = 'none');
+        document.getElementById(tabId).style.display = 'block';
+
+        document.querySelectorAll('.admin-nav button').forEach(btn => btn.classList.remove('active-tab'));
+        const tabButton = document.getElementById(`${tabId.replace(/-/g, '_')}-tab`);
+        if (tabButton) tabButton.classList.add('active-tab');
+
+        if (tabId === 'manajemen-pinjam') renderAdminPinjam();
+        if (tabId === 'manajemen-buku') renderAdminBookManagement();
+        if (tabId === 'manajemen-user') renderAdminUserManagement();
+        if (tabId === 'saran-kritik') renderAdminSuggestions();
+    };
+
+    showAdminTab('manajemen-pinjam');
+}
+
+window.renderAdminPinjam = async () => {
+    const container = document.getElementById('admin-pinjam-list');
+    container.innerHTML = '<h3>Pengajuan & Peminjaman Aktif</h3>';
+
+    try {
+        const data = await getAllData();
+        const pendingTransactions = data.transactions.filter(t => t.type === 'pinjam' && (t.status === 'diajukan' || t.status === 'diacc' || t.status === 'dipinjam'));
+
+        if (pendingTransactions.length === 0) { container.innerHTML += '<p>Tidak ada transaksi yang perlu diurus saat ini.</p>'; return; }
+
+        pendingTransactions.forEach(t => {
+            const book = data.books.find(b => b.id === t.bookId);
+            const member = data.users.find(u => u.id === t.userId);
+            if (!book || !member) return;
+
+            let actionButtons = '';
+            let infoStatus = '';
+            const now = Date.now();
+            const dueDate = t.dueDate ? new Date(t.dueDate).getTime() : null;
+            let diffDays = dueDate ? Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24)) : null;
+
+            if (t.status === 'diajukan') {
+                actionButtons = `<button onclick="handleAdminAction(${t.id}, 'acc')" class="btn-action acc" style="margin-right: 8px;"><i class="fas fa-check"></i> ACC</button>
+                                 <button onclick="handleAdminAction(${t.id}, 'tolak')" class="btn-action tolak"><i class="fas fa-times"></i> Tolak</button>`;
+                infoStatus = `Diajukan: ${formatDate(t.date)}`;
+            } else if (t.status === 'diacc') {
+                actionButtons = `<button onclick="handleAdminAction(${t.id}, 'pinjam')" class="btn-action pinjam" style="margin-right: 8px;"><i class="fas fa-handshake"></i> Serahkan Buku</button>
+                                 <button onclick="handleAdminAction(${t.id}, 'batal')" class="btn-action tolak"><i class="fas fa-ban"></i> Batalkan</button>`;
+                infoStatus = `Batas Ambil: ${formatDate(t.dueDate)} (${Math.max(0, diffDays)} hari tersisa)`;
+            } else if (t.status === 'dipinjam') {
+                 actionButtons = `<button onclick="handleAdminAction(${t.id}, 'kembali')" class="btn-action kembali"><i class="fas fa-undo"></i> Kembalikan</button>`;
+
+                 if (diffDays < 0) {
+                     infoStatus = `<span style="color: var(--danger-color); font-weight: bold;">TELAT ${Math.abs(diffDays)} hari! Segera kembalikan.</span>`;
+                 } else {
+                     infoStatus = `Jatuh Tempo: ${formatDate(t.dueDate)} (${diffDays} hari tersisa)`;
+                 }
+            }
+
+            container.innerHTML += `
+                <div class="status-card admin-card">
+                    <p><strong>Buku:</strong> <a href="buka_buku.html?id=${book.id}" target="_blank">${book.title}</a> (Stok: ${book.stock})</p>
+                    <p><strong>Anggota:</strong> ${member.name} (${member.username})</p>
+                    <p><strong>Status:</strong> <span class="status-${t.status.toLowerCase()} status-pinjam">${t.status.toUpperCase()}</span> | ${infoStatus}</p>
+                    <div class="admin-actions" style="margin-top: 10px;">${actionButtons}</div>
+                </div>
+            `;
+        });
+    } catch (error) {
+        container.innerHTML = `<p style="text-align: center; color: var(--danger-color);">Gagal memuat data pinjaman: ${error.message}</p>`;
+    }
+}
+
+window.handleAdminAction = async (transId, action) => {
+    try {
+        let data = await getAllData();
+        const tIndex = data.transactions.findIndex(tr => tr.id === transId);
+        if (tIndex === -1) { alert('Transaksi tidak ditemukan.'); return; }
+
+        const t = data.transactions[tIndex];
+        const bookIndex = data.books.findIndex(b => b.id === t.bookId);
+        const book = bookIndex !== -1 ? data.books[bookIndex] : null;
+
+        let dataToUpdate = { transactions: data.transactions, books: data.books };
+        let bookChanged = false;
+
+        if (action === 'acc') {
+            if (book.stock <= 0) { alert('Stok tidak mencukupi untuk di-ACC!'); return; }
+            t.status = 'diacc';
+            t.dueDate = new Date(Date.now() + DUE_DATE_ACC_MAX * 24 * 60 * 60 * 1000).toISOString();
+            t.activity.push({ date: new Date().toISOString(), action: 'Pengajuan peminjaman buku diterima oleh Admin. Batas ambil 3 hari.' });
+            if (book) { dataToUpdate.books[bookIndex].stock -= 1; bookChanged = true; }
+            alert('Pengajuan diterima! Stok dikurangi. Anggota harus mengambil buku dalam 3 hari.');
+        } else if (action === 'tolak' || action === 'batal') {
+            t.status = action === 'tolak' ? 'ditolak' : 'dibatalkan';
+            t.activity.push({ date: new Date().toISOString(), action: `${t.status.toUpperCase()} oleh Admin` });
+            if(t.status === 'dibatalkan' && book && book.type.includes('Fisik') && book.stock < book.stockMax) {
+                dataToUpdate.books[bookIndex].stock += 1;
+                bookChanged = true;
+            }
+            alert('Transaksi dibatalkan/ditolak.');
+        } else if (action === 'pinjam') {
+            t.status = 'dipinjam';
+            t.dueDate = new Date(Date.now() + DUE_DATE_PINJAM_MAX * 24 * 60 * 60 * 1000).toISOString();
+            t.activity.push({ date: new Date().toISOString(), action: 'Buku diserahkan dan mulai dipinjam.' });
+            alert('Buku telah dipinjam. Jatuh tempo 7 hari.');
+        } else if (action === 'kembali') {
+            t.status = 'dikembalikan';
+            t.returnedDate = new Date().toISOString();
+            t.activity.push({ date: new Date().toISOString(), action: 'Buku berhasil dikembalikan.' });
+            if(book && book.type.includes('Fisik')) { dataToUpdate.books[bookIndex].stock += 1; bookChanged = true; }
+            alert('Status diubah menjadi DIKEMBALIKAN. Stok bertambah.');
+        }
+
+        await setDatabaseData('transactions', dataToUpdate.transactions);
+        if(bookChanged) await setDatabaseData('books', dataToUpdate.books);
+
+        renderAdminPinjam();
+    } catch (error) {
+        alert(error.message || 'Aksi admin gagal.');
+    }
+}
+
+// Implementasi Logika Tambah, Edit, Hapus Buku
+window.renderAdminBookManagement = async (bookToEdit = null) => {
+    const container = document.getElementById('admin-buku-list');
+    container.innerHTML = '<h3>Manajemen Koleksi Buku (Tambah, Edit, Hapus)</h3>';
+
+    const data = await getAllData();
+
+    // Perbaikan: Gunakan currentCoverUrl dari data Base64 jika ada
+    const currentCoverUrl = bookToEdit && bookToEdit.cover && bookToEdit.cover.startsWith('data:image') ? bookToEdit.cover : (bookToEdit && bookToEdit.cover || 'img/default.jpg');
+    const currentEbookPath = bookToEdit ? bookToEdit.ebookPath : null;
+    const currentEbookFileName = currentEbookPath ? currentEbookPath.substring(currentEbookPath.lastIndexOf('/') + 1) : 'Belum ada file diunggah.';
+    const ebookPathInfoColor = currentEbookPath ? 'var(--primary-color)' : '#999';
+
+    // Form Tambah/Edit Buku (STRUKTUR HTML)
+    container.innerHTML += `
+        <details id="form-buku-container" ${bookToEdit ? 'open' : ''} style="margin-bottom: 20px; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
+            <summary style="font-weight: bold; cursor: pointer;">${bookToEdit ? '✎ Edit Buku: ' + bookToEdit.title : '+ Tambah Buku Baru'}</summary>
+            <form id="form-book-management" style="margin-top: 10px; display: grid; gap: 10px;">
+                <div id="submit-notification" style="padding: 10px; border-radius: 5px; text-align: center; display: none;"></div>
+
+                <input type="hidden" name="id" value="${bookToEdit ? bookToEdit.id : ''}">
+                <input type="text" name="title" placeholder="Judul" required value="${bookToEdit ? bookToEdit.title : ''}">
+                <input type="text" name="author" placeholder="Author" required value="${bookToEdit ? bookToEdit.author : ''}">
+                <input type="number" name="year" placeholder="Tahun" required value="${bookToEdit ? bookToEdit.year : ''}">
+                <input type="number" name="stock" placeholder="Stok Fisik Saat Ini" required value="${bookToEdit ? bookToEdit.stock : ''}">
+                <input type="number" name="stockMax" placeholder="Stok Maksimal" required value="${bookToEdit ? bookToEdit.stockMax : ''}">
+
+                <select name="type" required id="book-type-select">
+                    <option value="">-- Pilih Jenis --</option>
+                    <option value="Buku Fisik" ${bookToEdit && bookToEdit.type === 'Buku Fisik' ? 'selected' : ''}>Buku Fisik</option>
+                    <option value="Ebook" ${bookToEdit && bookToEdit.type === 'Ebook' ? 'selected' : ''}>Ebook</option>
+                    <option value="Fisik & Ebook" ${bookToEdit && bookToEdit.type === 'Fisik & Ebook' ? 'selected' : ''}>Fisik & Ebook</option>
+                </select>
+
+                <select name="category" required>
+                    <option value="">-- Pilih Kategori --</option>
+                    <option value="Fiksi" ${bookToEdit && bookToEdit.category === 'Fiksi' ? 'selected' : ''}>Fiksi</option>
+                    <option value="Non-Fiksi" ${bookToEdit && bookToEdit.category === 'Non-Fiksi' ? 'selected' : ''}>Non-Fiksi</option>
+                </select>
+                <input type="text" name="genre" placeholder="Genre" value="${bookToEdit ? bookToEdit.genre : ''}">
+                <textarea name="synopsis" placeholder="Sinopsis">${bookToEdit ? bookToEdit.synopsis : ''}</textarea>
+
+                <label style="font-weight: bold; margin-top: 5px;">Upload Cover (Hanya Gambar)</label>
+                <img id="cover-preview" src="${currentCoverUrl}" alt="Cover Preview" style="width: 150px; height: auto; margin-bottom: 5px; border: 2px solid var(--accent-color); border-radius: 5px; box-shadow: 0 0 5px rgba(0,0,0,0.1);" onerror="this.onerror=null; this.src='img/default.jpg';"/>
+                <input type="file" id="cover-upload" name="cover_file" accept="image/png, image/jpeg, image/jpg">
+                <input type="hidden" id="cover-hidden-data" name="cover_data_base64" value="${bookToEdit && bookToEdit.cover ? bookToEdit.cover : ''}">
+
+                <div id="ebook-upload-group">
+                    <label style="font-weight: bold; margin-top: 5px;">Upload Ebook (Hanya PDF)</label>
+                    <p id="ebook-path-info" style="font-size: 0.9em; color: ${ebookPathInfoColor};">
+                        ${currentEbookPath ? `File saat ini: <strong>${currentEbookFileName}</strong> (Ganti file di bawah)` : 'Belum ada file diunggah.'}
+                    </p>
+                    <input type="file" id="ebook-upload" name="ebook_file" accept="application/pdf">
+                    <input type="hidden" id="ebook-path-hidden" name="ebookPath" value="${bookToEdit && currentEbookPath ? currentEbookPath : ''}">
+                    <p style="font-size: 0.8em; color: var(--danger-color);">*Wajib diisi jika Jenis Buku adalah Ebook atau Fisik & Ebook.</p>
+                </div>
+
+                <button type="submit" id="submit-btn" class="btn-primary" style="background-color: ${bookToEdit ? 'var(--accent-color)' : 'var(--primary-color)'}">
+                    <i class="fas fa-${bookToEdit ? 'save' : 'plus'}"></i> ${bookToEdit ? 'Update Buku' : 'Tambahkan Buku'}
+                </button>
+                ${bookToEdit ? '<button type="button" onclick="renderAdminBookManagement(null)" class="btn-primary tolak" style="margin-top: 5px;"><i class="fas fa-times"></i> Batal Edit</button>' : ''}
+            </form>
+        </details>
+    `;
+
+    // Ambil elemen form yang baru dibuat
+    const form = document.getElementById('form-book-management');
+    const submitBtn = document.getElementById('submit-btn');
+    const notificationDiv = document.getElementById('submit-notification');
+
+    const coverUploadInput = document.getElementById('cover-upload');
+    const coverPreview = document.getElementById('cover-preview');
+    const coverHiddenInput = document.getElementById('cover-hidden-data');
+
+    const ebookUploadInput = document.getElementById('ebook-upload');
+    const ebookHiddenInput = document.getElementById('ebook-path-hidden');
+    const ebookPathInfo = document.getElementById('ebook-path-info');
+
+    const bookTypeSelect = document.getElementById('book-type-select');
+
+    // Helper untuk menampilkan notifikasi
+    const showNotification = (message, type) => {
+        notificationDiv.innerHTML = message;
+        notificationDiv.style.display = 'block';
+        if (type === 'loading') {
+            notificationDiv.style.backgroundColor = '#ffffcc';
+            notificationDiv.style.border = '1px solid #ffeb3b';
+            notificationDiv.style.color = '#333';
+        } else if (type === 'success') {
+            notificationDiv.style.backgroundColor = '#e6ffe6';
+            notificationDiv.style.border = '1px solid #4caf50';
+            notificationDiv.style.color = '#333';
+        } else if (type === 'error') {
+            notificationDiv.style.backgroundColor = '#ffe6e6';
+            notificationDiv.style.border = '1px solid #f44336';
+            notificationDiv.style.color = '#f44336';
+        }
+    };
+
+    // 2.1. Cover File Handler (Base64) - PERBAIKAN: Memastikan Preview Langsung Muncul
+    if (coverUploadInput) {
+        coverUploadInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Tambahkan validasi tipe file yang diizinkan (PNG, JPEG, JPG)
+                if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
+                    showNotification("File cover harus berupa gambar (PNG/JPG/JPEG)!", 'error');
+                    coverUploadInput.value = '';
+                    coverPreview.src = 'img/default.jpg';
+                    coverHiddenInput.value = '';
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    // Update preview dengan gambar baru (Base64)
+                    coverPreview.src = event.target.result;
+                    coverHiddenInput.value = event.target.result;
+                    showNotification("Preview Cover Berhasil Dimuat.", 'success');
+                };
+                reader.onerror = function() {
+                    showNotification("Gagal membaca file Cover.", 'error');
+                    coverPreview.src = 'img/default.jpg';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                // Jika input dibatalkan/kosong
+                if (bookToEdit && bookToEdit.cover) {
+                    coverPreview.src = bookToEdit.cover;
+                    coverHiddenInput.value = bookToEdit.cover;
+                } else {
+                    coverPreview.src = 'img/default.jpg';
+                    coverHiddenInput.value = '';
+                }
+                showNotification("Pilihan file Cover dibatalkan.", 'loading');
+            }
+        });
+    }
+
+    // 2.2. Ebook File Handler (Simulasi Path)
+    if (ebookUploadInput) {
+        ebookUploadInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.type !== 'application/pdf') {
+                    showNotification("File ebook harus berupa PDF!", 'error');
+                    ebookUploadInput.value = '';
+                    return;
+                }
+                const simulatedPath = `assets/${file.name.replace(/[^a-zA-Z0-9.\-]/g, '_')}`;
+                ebookHiddenInput.value = simulatedPath;
+                ebookPathInfo.innerHTML = `File diunggah: <strong>${file.name}</strong> (Path: ${simulatedPath})`;
+                ebookPathInfo.style.color = 'var(--primary-color)';
+                showNotification(`Preview Ebook PDF (${file.name}) Berhasil Dimuat.`, 'success');
+            } else {
+                const currentPath = bookToEdit ? bookToEdit.ebookPath : '';
+                ebookHiddenInput.value = currentPath;
+                if (currentPath) {
+                    const currentFileName = currentPath.substring(currentPath.lastIndexOf('/') + 1);
+                    ebookPathInfo.innerHTML = `File saat ini: <strong>${currentFileName}</strong> (Ganti file di bawah)`;
+                } else {
+                    ebookPathInfo.innerHTML = 'Belum ada file diunggah.';
+                }
+                ebookPathInfo.style.color = currentPath ? 'var(--primary-color)' : '#999';
+                showNotification("Pilihan file Ebook dibatalkan.", 'loading');
+            }
+        });
+    }
+
+
+    // Daftar Buku untuk Edit/Hapus
+    container.innerHTML += '<h4>Daftar Semua Buku:</h4>';
+    data.books.forEach(book => {
+        const bookCover = book.cover && book.cover.startsWith('data:image') ? book.cover : (book.cover || 'img/default.jpg');
+        container.innerHTML += `
+            <div class="admin-card book-item-management" style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; background-color: #f7f7f7;">
+                <span>
+                    <strong>${book.title}</strong> (${book.author})<br>
+                    Stok: ${book.stock}/${book.stockMax} | Jenis: ${book.type}
+                </span>
+                <div style="margin-top: 5px;">
+                    <button onclick="editBook(${book.id})" class="btn-action acc"><i class="fas fa-edit"></i> Edit</button>
+                    <button onclick="deleteBook(${book.id})" class="btn-action tolak"><i class="fas fa-trash"></i> Hapus</button>
+                </div>
+            </div>
+        `;
+    });
+
+    // Handler Tambah/Edit Buku
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            showNotification(`<i class="fas fa-spinner fa-spin"></i> Sedang ${bookToEdit ? 'Mengupdate' : 'Menambahkan'} buku...`, 'loading');
+            submitBtn.disabled = true;
+
+            const id = form.id.value;
+            const stockValue = parseInt(form.stock.value) || 0;
+            const stockMaxValue = parseInt(form.stockMax.value) || stockValue;
+
+            const coverDataUrl = form.cover_data_base64.value.trim();
+            let ebookPathValue = form.ebookPath.value.trim();
+            const bookType = form.type.value;
+
+            // 1. Validasi Stok
+            if (stockValue > stockMaxValue) {
+                showNotification('Gagal: Stok fisik saat ini tidak boleh melebihi Stok Maksimal!', 'error');
+                submitBtn.disabled = false;
+                return;
+            }
+
+            // 2. Validasi COVER
+            if (!coverDataUrl) {
+                showNotification('Gagal: Cover harus diunggah!', 'error');
+                submitBtn.disabled = false;
+                return;
+            }
+
+            // 3. VALIDASI EBOOK PATH BERDASARKAN JENIS BUKU
+            if (bookType.includes('Ebook') && !ebookPathValue) {
+                showNotification('Gagal: Jika jenis buku mengandung "Ebook", Anda wajib menentukan file PDF!', 'error');
+                submitBtn.disabled = false;
+                return;
+            }
+
+            try {
+                const dataToUpdate = await getAllData();
+
+                const newBookData = {
+                    title: form.title.value,
+                    author: form.author.value,
+                    year: parseInt(form.year.value),
+                    stock: stockValue,
+                    stockMax: stockMaxValue,
+                    type: bookType,
+                    category: form.category.value,
+                    genre: form.genre.value,
+                    synopsis: form.synopsis.value,
+                    cover: coverDataUrl,
+                    // Jika jenisnya bukan Ebook, path Ebook di-null-kan
+                    ebookPath: bookType.includes('Ebook') ? ebookPathValue : null,
+                };
+
+                // Logika Update/Tambah
+                if (id) {
+                    const bookIndex = dataToUpdate.books.findIndex(b => b.id == id);
+                    if (bookIndex > -1) {
+                        dataToUpdate.books[bookIndex] = { ...dataToUpdate.books[bookIndex], ...newBookData, id: parseInt(id) };
+                        showNotification('Sukses: Buku berhasil **diperbarui**! ✅', 'success');
+                    }
+                } else {
+                    dataToUpdate.books.push({
+                        id: Date.now(),
+                        ...newBookData
+                    });
+                    showNotification('Sukses: Buku berhasil **ditambahkan**! 📚', 'success');
+                }
+
+                await setDatabaseData('books', dataToUpdate.books);
+
+                setTimeout(() => {
+                    // Reset dan render ulang
+                    renderAdminBookManagement();
+                }, 1500);
+
+            } catch (error) {
+                showNotification(`Gagal: ${error.message || 'Terjadi kesalahan saat menyimpan buku.'}`, 'error');
+                console.error("Submit Book Error:", error);
+                submitBtn.disabled = false;
+            }
+        });
+    } 
+}
+
+window.editBook = async (id) => {
+    try {
+        const data = await getAllData();
+        const book = data.books.find(b => b.id === id);
+        if (book) {
+            await renderAdminBookManagement(book);
+            document.getElementById('form-buku-container').scrollIntoView({ behavior: 'smooth' });
+        }
+    } catch (error) {
+        alert(error.message || 'Gagal memuat data edit buku.');
+    }
+}
+
+window.deleteBook = async (id) => {
+    if (!confirm('PERINGATAN! Yakin hapus buku ini? Semua riwayat pinjaman/bookmark terkait akan hilang secara permanen.')) {
         return;
     }
 
-    // Fungsi untuk mengubah tab (dibuat global agar bisa diakses dari tombol di HTML)
-    window.showAdminTab = (tabName) => {
-        document.querySelectorAll('.admin-tab-content').forEach(content => content.style.display = 'none');
-        document.querySelectorAll('.admin-tab-button').forEach(button => button.classList.remove('admin-tab-active'));
+    try {
+        let data = await getAllData();
+        const bookTitle = data.books.find(b => b.id === id)?.title || 'Buku';
 
-        const targetContent = document.getElementById(tabName);
-        const targetButton = document.querySelector(`.admin-tab-button[data-tab='${tabName}']`);
+        data.books = data.books.filter(b => b.id !== id);
+        data.transactions = data.transactions.filter(t => t.bookId !== id);
+        data.bookmarks = data.bookmarks.filter(b => b.bookId !== id);
+        data.ebookHistory = data.ebookHistory.filter(h => h.bookId !== id);
 
-        if (targetContent) targetContent.style.display = 'block';
-        if (targetButton) targetButton.classList.add('admin-tab-active');
+        await setDatabaseData('/', data);
 
-        // Panggil fungsi render spesifik
-        if (tabName === 'manajemen-transaksi') {
-            // Panggil filter default ('all') saat tab transaksi dibuka
-            const defaultButton = document.querySelector('#transaction-filter-tabs button[data-filter="all"]');
-            if (defaultButton) {
-                setTransactionFilter(defaultButton, 'all');
-            } else {
-                 renderAdminTransactionManagement('all'); // Fallback
-            }
-        } 
-        // Tambahkan pemanggilan untuk fungsi manajemen lain di sini jika sudah dibuat
-        // else if (tabName === 'manajemen-buku') {
-        //     renderAdminBookManagement();
-        // } else if (tabName === 'saran-kritik') {
-        //     renderAdminSuggestionManagement();
-        // }
-    };
-    
-    // Fungsi untuk mengubah filter transaksi (dibuat global)
-    window.setTransactionFilter = (button, filter) => {
-        document.querySelectorAll('#transaction-filter-tabs button').forEach(btn => btn.classList.remove('admin-tab-active'));
-        button.classList.add('admin-tab-active');
-        button.dataset.filter = filter; // Simpan status filter di data-attribute
-        renderAdminTransactionManagement(filter);
-    };
+        alert(`${bookTitle} dan semua riwayatnya berhasil dihapus! 🗑️`);
+        renderAdminBookManagement();
+    } catch (error) {
+        alert(error.message || 'Gagal menghapus buku.');
+    }
+}
 
+window.renderAdminUserManagement = async () => {
+    const container = document.getElementById('admin-user-list');
+    container.innerHTML = '<h3>Manajemen Akun Anggota</h3>';
 
-    mainContent.innerHTML = `
-        <h2 class="page-title">Admin Dashboard</h2>
-        <div class="admin-tabs">
-            <button class="admin-tab-button admin-tab-active" data-tab="manajemen-transaksi" onclick="showAdminTab('manajemen-transaksi')">Manajemen Peminjaman</button>
-            <button class="admin-tab-button" data-tab="manajemen-buku" onclick="showAdminTab('manajemen-buku')">Manajemen Buku</button>
-            <button class="admin-tab-button" data-tab="saran-kritik" onclick="showAdminTab('saran-kritik')">Saran & Kritik</button>
-        </div>
-        <div class="admin-content">
-            <div id="manajemen-transaksi" class="admin-tab-content" style="display: block;">
-                <h3>Manajemen Peminjaman Buku Fisik</h3>
-                <div class="admin-filter-tabs" id="transaction-filter-tabs">
-                    <button class="btn btn-sm admin-tab-active" data-filter="all" onclick="setTransactionFilter(this, 'all')">Semua</button>
-                    <button class="btn btn-sm" data-filter="diajukan" onclick="setTransactionFilter(this, 'diajukan')">Diajukan</button>
-                    <button class="btn btn-sm" data-filter="diacc" onclick="setTransactionFilter(this, 'diacc')">Di ACC</button>
-                    <button class="btn btn-sm" data-filter="dipinjam" onclick="setTransactionFilter(this, 'dipinjam')">Dipinjam</button>
-                    <button class="btn btn-sm" data-filter="dikembalikan" onclick="setTransactionFilter(this, 'dikembalikan')">Dikembalikan</button>
-                    <button class="btn btn-sm" data-filter="ditolak" onclick="setTransactionFilter(this, 'ditolak')">Ditolak/Dibatalkan</button>
-                </div>
-                <div id="admin-transaction-content" style="margin-top: 15px;">
+    try {
+        const data = await getAllData();
+        data.users.filter(u => u.role === 'user').forEach(user => {
+            const profilePicSrc = user.profilePicture && user.profilePicture.startsWith('data:image') ? user.profilePicture : 'img/default_user.png';
+
+            container.innerHTML += `
+                <div class="admin-card user-item-management">
+                    <div style="display: flex; align-items: center;">
+                        <img src="${profilePicSrc}" alt="Foto Profil" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; margin-right: 15px; border: 1px solid #ccc;">
+                        <div>
+                            <p><strong>Nama:</strong> ${user.name} (${user.username})</p>
+                            <p><strong>Email:</strong> ${user.email} | <strong>HP:</strong> ${user.phone || 'N/A'}</p>
+                            <p><strong>Alamat:</strong> ${user.address || 'N/A'}</p>
+                        </div>
                     </div>
-            </div>
-            
-            <div id="manajemen-buku" class="admin-tab-content">
-                <h3>Manajemen Buku</h3>
-                <p>Fitur Manajemen Buku akan dimuat di sini.</p>
-                <div id="admin-book-content"></div>
-            </div>
-            
-            <div id="saran-kritik" class="admin-tab-content">
-                <h3>Saran & Kritik</h3>
-                <p>Daftar Saran & Kritik akan dimuat di sini.</p>
-                <div id="admin-suggestion-content"></div>
-            </div>
-        </div>
-    `;
-    
-    // Inisialisasi: tampilkan tab pertama
-    showAdminTab('manajemen-transaksi'); 
+                    <div class="admin-actions" style="margin-top: 10px;">
+                        <button onclick="resetUserPassword(${user.id})" class="btn-action acc"><i class="fas fa-key"></i> Reset Pass</button>
+                        <button onclick="deleteUser(${user.id})" class="btn-action tolak"><i class="fas fa-user-times"></i> Hapus Akun</button>
+                    </div>
+                </div>
+            `;
+        });
+    } catch (error) {
+        container.innerHTML = `<p style="text-align: center; color: var(--danger-color);">Gagal memuat data anggota: ${error.message}</p>`;
+    }
+}
+
+window.resetUserPassword = async (userId) => {
+    let newPassword = prompt("Masukkan password baru untuk anggota ini:");
+    if (newPassword && newPassword.trim() !== '') {
+        try {
+            let data = await getAllData();
+            const userIndex = data.users.findIndex(u => u.id === userId);
+            if (userIndex > -1) {
+                data.users[userIndex].password = newPassword;
+                await setDatabaseData('users', data.users);
+                alert(`Password untuk ${data.users[userIndex].username} berhasil di-reset menjadi "${newPassword}"!`);
+                renderAdminUserManagement();
+            }
+        } catch (error) {
+            alert(error.message || 'Gagal reset password.');
+        }
+    } else if (newPassword !== null) {
+        alert('Password tidak boleh kosong!');
+    }
+}
+
+window.deleteUser = async (userId) => {
+    try {
+        let data = await getAllData();
+        const user = data.users.find(u => u.id === userId);
+        if (!user) return;
+
+        if (!confirm(`PERINGATAN! Yakin hapus akun ${user.username}? Semua riwayat terkait akun ini akan hilang.`)) {
+            return;
+        }
+
+        data.users = data.users.filter(u => u.id !== userId);
+        data.transactions = data.transactions.filter(t => t.userId !== userId);
+        data.bookmarks = data.bookmarks.filter(b => b.userId !== userId);
+        data.ebookHistory = data.ebookHistory.filter(h => h.userId !== userId);
+        data.suggestions = data.suggestions.filter(s => s.userId !== userId);
+
+        await setDatabaseData('/', data);
+        alert(`Akun ${user.username} berhasil dihapus! 💀`);
+        renderAdminUserManagement();
+    } catch (error) {
+        alert(error.message || 'Gagal menghapus akun.');
+    }
+}
+
+// LOGIKA ADMIN SARAN KRITIK (Tampilan Full dan Benar)
+window.renderAdminSuggestions = async () => {
+    const container = document.getElementById('admin-saran-list');
+    container.innerHTML = '<h3>Saran & Kritik dari Anggota</h3>';
+
+    try {
+        const data = await getAllData();
+
+        // Urutkan berdasarkan tanggal terbaru
+        const sortedSuggestions = data.suggestions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        if (sortedSuggestions.length === 0) {
+            container.innerHTML += '<p style="text-align: center; color: #666;">Tidak ada saran atau kritik yang masuk.</p>';
+            return;
+        }
+
+        sortedSuggestions.forEach(s => {
+            // Temukan detail user (termasuk foto profil jika ada)
+            const user = data.users.find(u => u.id === s.userId) || { name: 'Anggota Dihapus', profilePicture: null, email: 'N/A' };
+            const profilePicSrc = user.profilePicture && user.profilePicture.startsWith('data:image') ? user.profilePicture : 'img/default_user.png';
+
+            container.innerHTML += `
+                <div class="admin-card suggestion-item-management" style="border-left: 5px solid var(--accent-color); margin-bottom: 15px; padding: 15px;">
+                    <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                        <img src="${profilePicSrc}" alt="Foto Profil" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 15px; border: 1px solid #ccc;">
+                        <div>
+                            <p style="margin: 0;"><strong>${user.name}</strong> (@${s.username || 'unknown'})</p>
+                            <p style="margin: 0; font-size: 0.8em; color: #777;">${formatDate(s.date)}</p>
+                        </div>
+                    </div>
+                    <p style="margin: 0; padding: 10px; background: #f0f0f0; border-radius: 5px; font-style: italic;">"${s.message}"</p>
+                </div>
+            `;
+        });
+    } catch (error) {
+        container.innerHTML = `<p style="text-align: center; color: var(--danger-color);">Gagal memuat saran: ${error.message}</p>`;
+    }
 }

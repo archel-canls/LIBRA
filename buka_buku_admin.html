@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Detail Buku Admin | Libra</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/profil.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        /* CSS untuk Formulir Edit Inline */
+        #edit-bar-container {
+            transition: max-height 0.5s ease-out, opacity 0.5s ease-out;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+        #edit-bar-container.show {
+            max-height: 1000px; /* Nilai besar agar konten terlihat */
+            opacity: 1;
+            margin-bottom: 0px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .form-group-inline {
+            margin-bottom: -10px;
+        }
+        .form-group-inline label {
+            display: block;
+            margin-bottom: 3px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+        .form-group-inline input, .form-group-inline textarea, .form-group-inline select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            /* Penting: Pastikan padding/border dihitung dalam 100% lebar */
+            box-sizing: border-box; 
+        }
+    
+        /* ========================================================= */
+        /* FIX EPATH/JALUR FILE KEPOTONG PADA INPUT TYPE=FILE */
+        /* ========================================================= */
+        .form-group-inline input[type="file"] {
+            /* Memaksa elemen untuk menghormati lebar kontainer */
+            display: block;
+            width: 100%;
+            
+            /* Paling Penting: Mengizinkan input file menyusut ke 100% dari kontainer */
+            min-width: 0; 
+            
+            /* Tambahan: Hanya untuk estetika, teks path file akan tetap terpotong secara visual */
+            overflow: hidden; 
+        }
+    
+        /* Kelas CSS untuk status tombol Edit/Batal */
+        .btn-edit-action {
+            background-color: #ffc107 !important; /* Kuning (Edit) */
+            color: #333 !important;
+        }
+        .btn-cancel-action {
+            background-color: #6c757d !important; /* Abu-abu (Batal) */
+            color: white !important;
+        }
+    </style>
+
+</head>
+<body id="detail-admin-page">
+    <header class="header">
+        <div id="hamburger-menu" class="hamburger order-1"><i class="fas fa-bars"></i></div>
+        
+        <div class="logo order-2"><a href="admin.html">Libra-Admin</a></div>
+        
+        <div class="header-right-menu order-3">
+            <div id="profile-icon" class="profile-icon">
+                <img id="header-profile-img" src="img/default_user.png" alt="Profil">
+                <i class="fas fa-user-circle default-icon"></i> 
+            </div>
+        </div>
+
+        <nav class="nav-menu">
+            <a href="admin.html">Beranda</a>
+            <a href="manajemen_peminjaman.html">Manajemen Peminjaman</a>
+            <a href="manajemen_akun.html">Manajemen Anggota</a>
+            <a href="saran_admin.html">Saran & Kritik User</a>
+        </nav>
+    </header>
+
+    <main class="container">
+        <div id="edit-bar-container" class="bg-blue-100 border border-blue-400 text-blue-700 mb-4" role="alert">
+            <h2 class="text-xl font-bold mb-4"><i class="fas fa-tools mr-2"></i> Edit Data Buku (ID: <span id="current-book-id-display"></span>)</h2>
+            <form id="edit-book-form">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    <div class="form-group-inline">
+                        <label for="edit-title">Judul Buku:</label>
+                        <input type="text" id="edit-title" name="edit-title" required>
+                    </div>
+                    <div class="form-group-inline">
+                        <label for="edit-author">Penulis:</label>
+                        <input type="text" id="edit-author" name="edit-author" required>
+                    </div>
+
+                    <div class="form-group-inline">
+                        <label for="edit-year">Tahun Terbit:</label>
+                        <input type="number" id="edit-year" name="edit-year" required min="1000">
+                    </div>
+                    <div class="form-group-inline">
+                        <label for="edit-genre">Genre:</label>
+                        <input type="text" id="edit-genre" name="edit-genre" required>
+                    </div>
+
+                    <div class="form-group-inline">
+                        <label for="edit-category">Kategori:</label>
+                        <select id="edit-category" name="edit-category" required>
+                            <option value="Fiksi">Fiksi</option>
+                            <option value="Non Fiksi">Non Fiksi</option>
+                        </select>
+                    </div>
+                    <div class="form-group-inline">
+                        <label for="edit-type">Tipe (Fisik/Ebook):</label>
+                        <select id="edit-type" name="edit-type" required>
+                            <option value="Buku Fisik">Buku Fisik</option>
+                            <option value="Ebook">Ebook</option>
+                            <option value="Fisik & Ebook">Fisik & Ebook</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group-inline">
+                        <label for="edit-stockMax">Stok Maksimal:</label>
+                        <input type="number" id="edit-stockMax" name="edit-stockMax" min="0" required>
+                    </div>
+                    <div class="form-group-inline">
+                        <label for="edit-fineAmount">Denda Hilang (Rp):</label>
+                        <input type="number" id="edit-fineAmount" name="edit-fineAmount" min="0" required>
+                    </div>
+
+                    <div class="form-group-inline md:col-span-2">
+                        <label for="edit-synopsis">Sinopsis:</label>
+                        <textarea id="edit-synopsis" name="edit-synopsis" rows="3" required></textarea>
+                    </div>
+
+                    <div class="form-group-inline">
+                        <label for="edit-cover-file">Ganti Cover File (Opsional):</label>
+                        <input type="file" id="edit-cover-file" accept=".jpg, .jpeg, .png">
+                        <small id="edit-current-cover" class="text-xs italic text-gray-600">Status cover...</small>
+                        <input type="hidden" id="edit-cover-old">
+                    </div>
+                    
+                    <div class="form-group-inline">
+                        <label for="edit-ebook-file">Ganti Ebook File (.pdf - Opsional):</label>
+                        <input type="file" id="edit-ebook-file" accept=".pdf">
+                        <small id="edit-current-ebook" class="text-xs italic text-gray-600">Status Ebook...</small>
+                        <input type="hidden" id="edit-ebook-old">
+                    </div>
+
+                </div>
+
+                <div class="flex justify-end mt-4">
+                    <button type="submit" id="submit-edit-btn" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700">Simpan Perubahan</button>
+                    <button type="button" onclick="toggleEditBar()" class="px-4 py-2 bg-gray-500 text-white font-semibold rounded hover:bg-gray-600 ml-3">Batal</button>
+                </div>
+            </form>
+        </div>
+        <div class="detail-flex">
+            <div class="detail-cover">
+                <img id="detail-cover" src="img/default.jpg" alt="Cover Buku">
+                
+                <div class="detail-actions" style="margin-top: 20px;">
+                    
+                    <button id="btn-edit" 
+                            data-book-id="" 
+                            class="btn-primary btn-edit-action" 
+                            style="margin-bottom: 10px; width: 100%; font-weight: bold;">
+                        <i class="fas fa-edit"></i> Edit Buku
+                    </button>
+                    
+                    <button id="btn-hapus" 
+                            data-book-id="" 
+                            class="btn-primary" 
+                            style="background-color: #dc3545; margin-bottom: 10px; width: 100%; font-weight: bold;">
+                        <i class="fas fa-trash-alt"></i> Hapus Buku
+                    </button>
+
+                    <p id="detail-stock" style="margin-top: 15px; font-weight: bold; color: #28a745;">Memuat Stok...</p>
+                </div>
+            </div>
+
+            <div class="detail-info">
+                <h1 id="detail-title">Memuat Judul Buku...</h1>
+                <p id="detail-jenis" style="font-style: italic; color: #666; margin-bottom: 20px;">Memuat ID dan Tipe...</p>
+                
+                <hr>
+
+                <h3>Sinopsis</h3>
+                <p id="detail-synopsis" style="margin-bottom: 20px; text-align: justify;">Memuat Sinopsis...</p>
+                
+                <hr>
+
+                <div class="detail-metadata" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+                    <p><strong><i class="fas fa-user-edit"></i> Author:</strong> <span id="detail-author">Memuat...</span></p>
+                    <p><strong><i class="fas fa-calendar-alt"></i> Tahun Terbit:</strong> <span id="detail-tahun">Memuat...</span></p>
+                    <p><strong><i class="fas fa-tags"></i> Kategori:</strong> <span id="detail-kategori">Memuat...</span></p>
+                    <p><strong><i class="fas fa-puzzle-piece"></i> Genre:</strong> <span id="detail-genre">Memuat...</span></p>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <div id="profile-sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <button id="close-sidebar" class="close-btn">&times;</button>
+        </div>
+        <div class="profile-info text-center p-4">
+            <img id="sidebar-profile-img" src="img/default_user.png" alt="Foto Profil" class="w-24 h-24 rounded-full mx-auto border-4 border-white shadow-lg">
+            <h3 id="sidebar-username" class="mt-3 text-xl font-semibold">Pengunjung</h3>
+        </div>
+        
+        <nav class="sidebar-nav pt-4">
+            <a href="#" class="sidebar-link login-feature" id="link-edit-profile-photo">
+                <i class="fas fa-camera mr-3"></i> Edit Foto Profil
+            </a>
+            
+            <a href="reset_password.html" class="sidebar-link login-feature" id="link-reset-password">
+                <i class="fas fa-key mr-3"></i> Reset Password
+            </a>
+            
+            <hr class="my-4 border-gray-200 login-feature">
+            
+            <a href="login.html" class="sidebar-link logout-link" id="sidebar-auth-link">
+                <i class="fas fa-sign-in-alt mr-3" id="auth-icon"></i> <span id="auth-text">Login/Daftar</span>
+            </a>
+        </nav>
+    </div>
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <div id="edit-photo-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden z-[1000]">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm mx-4">
+            <h3 class="text-xl font-bold mb-4">Ubah Foto Profil</h3>
+            
+            <div class="text-center mb-4">
+                <img id="modal-current-profile-img" src="img/default_user.png" alt="Foto Saat Ini" class="w-20 h-20 rounded-full mx-auto mb-2 border-2 border-gray-200">
+                <button type="button" id="delete-photo-btn" class="text-sm text-red-500 hover:text-red-700 mt-1 hidden">Hapus Foto Profil</button>
+            </div>
+            
+            <form id="edit-photo-form">
+                <input type="file" id="modal-foto-upload" accept="image/*" required class="w-full mb-4 p-2 border rounded">
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="close-modal" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded hover:bg-indigo-700">Simpan Foto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Konfigurasi Firebase (DIAMBIL DARI FILE SEBELUMNYA)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdVYKc6waij3pmxI9dLDSBIgbYiFIRr3A",
+            authDomain: "libra-library-area.firebaseapp.com",
+            databaseURL: "https://libra-library-area-default-rtdb.asia-southeast1.firebasedatabase.app", 
+            projectId: "libra-library-area",
+            storageBucket: "libra-library-area.firebasestorage.app",
+            messagingSenderId: "455509444693",
+            appId: "1:455509444693:web:883766ec8a49032f0b2cdc",
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const dbRef = firebase.database().ref(); 
+        const booksRef = dbRef.child('books');
+        
+        let currentBookData = null; // Menyimpan data buku yang sedang dilihat/diedit
+
+        /**
+         * UTILITY: Mengkonversi File menjadi string Base64. (DIAMBIL DARI FILE SEBELUMNYA)
+         */
+        function convertFileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                if (!file) {
+                    resolve(null);
+                    return;
+                }
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        /**
+         * FUNGSI 1: MENDAPATKAN ID BUKU DARI URL
+         */
+        function getBookIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
+        }
+
+        /**
+         * FUNGSI 2: LOAD DATA DETAIL BUKU
+         */
+        async function loadBookDetail() {
+            const bookId = getBookIdFromUrl();
+            if (!bookId) {
+                alert("ID buku tidak ditemukan di URL!");
+                window.location.href = 'admin.html'; // Redirect jika ID tidak ada
+                return;
+            }
+
+            try {
+                const snapshot = await booksRef.child(bookId).once('value');
+                if (!snapshot.exists()) {
+                    alert(`Buku dengan ID ${bookId} tidak ditemukan.`);
+                    window.location.href = 'admin.html';
+                    return;
+                }
+
+                currentBookData = snapshot.val();
+                
+                // 1. Update elemen detail
+                document.getElementById('page-title').textContent = `Detail Buku: ${currentBookData.title} | Libra`;
+                document.getElementById('detail-cover').src = currentBookData.cover || 'img/default.jpg';
+                document.getElementById('detail-title').textContent = currentBookData.title;
+                document.getElementById('detail-jenis').textContent = `ID: ${currentBookData.id} | Tipe: ${currentBookData.type}`;
+                document.getElementById('detail-synopsis').textContent = currentBookData.synopsis;
+                document.getElementById('detail-author').textContent = currentBookData.author;
+                document.getElementById('detail-tahun').textContent = currentBookData.year;
+                document.getElementById('detail-kategori').textContent = currentBookData.category;
+                document.getElementById('detail-genre').textContent = currentBookData.genre;
+                document.getElementById('detail-stock').textContent = `Stok Tersedia: ${currentBookData.stock} / ${currentBookData.stockMax}`;
+
+                // 2. Set ID pada tombol action
+                document.getElementById('btn-edit').setAttribute('data-book-id', bookId);
+                document.getElementById('btn-hapus').setAttribute('data-book-id', bookId);
+
+                // 3. Populate Form Edit
+                document.getElementById('current-book-id-display').textContent = bookId;
+                document.getElementById('edit-title').value = currentBookData.title;
+                document.getElementById('edit-author').value = currentBookData.author;
+                document.getElementById('edit-year').value = currentBookData.year;
+                document.getElementById('edit-genre').value = currentBookData.genre;
+                document.getElementById('edit-category').value = currentBookData.category;
+                document.getElementById('edit-type').value = currentBookData.type;
+                document.getElementById('edit-stockMax').value = currentBookData.stockMax;
+                document.getElementById('edit-fineAmount').value = currentBookData.fineAmount;
+                document.getElementById('edit-synopsis').value = currentBookData.synopsis;
+
+                // Status file lama
+                document.getElementById('edit-current-cover').textContent = 'Cover lama akan dipertahankan jika tidak ada file baru dipilih.';
+                document.getElementById('edit-current-ebook').textContent = currentBookData.ebookPath ? 'Ebook PDF telah tersedia.' : 'Ebook PDF belum tersedia.';
+                document.getElementById('edit-cover-old').value = currentBookData.cover || '';
+                document.getElementById('edit-ebook-old').value = currentBookData.ebookPath || '';
+
+            } catch (error) {
+                console.error("Error loading book detail:", error);
+                alert("Gagal memuat detail buku.");
+            }
+        }
+
+        /**
+         * FUNGSI 3: TOGGLE FORMULIR EDIT
+         */
+        function toggleEditBar() {
+            const editBar = document.getElementById('edit-bar-container');
+            const btnEdit = document.getElementById('btn-edit');
+
+            editBar.classList.toggle('show');
+
+            if (editBar.classList.contains('show')) {
+                btnEdit.innerHTML = '<i class="fas fa-times"></i> Batalkan Edit';
+                btnEdit.classList.remove('btn-edit-action');
+                btnEdit.classList.add('btn-cancel-action');
+            } else {
+                btnEdit.innerHTML = '<i class="fas fa-edit"></i> Edit Buku';
+                btnEdit.classList.remove('btn-cancel-action');
+                btnEdit.classList.add('btn-edit-action');
+                // Reset formulir ketika dibatalkan
+                document.getElementById('edit-book-form').reset();
+            }
+        }
+
+        /**
+         * FUNGSI 4: SUBMIT EDIT BUKU
+         */
+        async function submitEditBook(e) {
+            e.preventDefault();
+            if (!currentBookData) return;
+            
+            const bookId = getBookIdFromUrl();
+            const form = e.target;
+            const btnSubmit = document.getElementById('submit-edit-btn');
+            
+            btnSubmit.disabled = true;
+            btnSubmit.textContent = 'Menyimpan...';
+
+            try {
+                const newCoverFile = document.getElementById('edit-cover-file').files[0];
+                const newEbookFile = document.getElementById('edit-ebook-file').files[0];
+
+                let newCoverBase64 = document.getElementById('edit-cover-old').value; 
+                let newEbookBase64 = document.getElementById('edit-ebook-old').value; 
+
+                // Proses file baru (jika ada)
+                if (newCoverFile) {
+                    newCoverBase64 = await convertFileToBase64(newCoverFile);
+                }
+                if (newEbookFile) {
+                    newEbookBase64 = await convertFileToBase64(newEbookFile);
+                }
+
+                const oldStockMax = currentBookData.stockMax;
+                const newStockMax = parseInt(form.elements['edit-stockMax'].value);
+                
+                // Hitung stok baru (Asumsi: Perubahan stockMax tidak mempengaruhi stok yang sedang dipinjam)
+                const stockDelta = newStockMax - oldStockMax;
+                const newStock = Math.max(0, currentBookData.stock + stockDelta);
+
+                // Data yang akan diupdate
+                const updatedData = {
+                    title: form.elements['edit-title'].value,
+                    author: form.elements['edit-author'].value,
+                    year: parseInt(form.elements['edit-year'].value),
+                    genre: form.elements['edit-genre'].value.toLowerCase().split(',').map(g => g.trim()).filter(g => g).join(', '),
+                    category: form.elements['edit-category'].value,
+                    synopsis: form.elements['edit-synopsis'].value,
+                    type: form.elements['edit-type'].value,
+                    stockMax: newStockMax,
+                    stock: newStock, // Update stok
+                    cover: newCoverBase64,
+                    ebookPath: newEbookBase64 || null,
+                    fineAmount: parseInt(form.elements['edit-fineAmount'].value) || 0,
+                    updatedAt: firebase.database.ServerValue.TIMESTAMP 
+                };
+
+                // Update ke Firebase
+                await booksRef.child(bookId).update(updatedData);
+
+                alert(`Buku ID ${bookId} ("${updatedData.title}") berhasil diperbarui! ✅`);
+                
+                // Tutup form edit dan muat ulang detail
+                toggleEditBar();
+                loadBookDetail(); 
+
+            } catch (error) {
+                console.error("Error updating book:", error);
+                alert("Gagal memperbarui data buku ke Firebase. Cek konsol untuk detail.");
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = 'Simpan Perubahan';
+            }
+        }
+
+        /**
+         * FUNGSI 5: HAPUS BUKU
+         */
+        async function deleteBook() {
+            if (!currentBookData) return;
+            const bookId = getBookIdFromUrl();
+            
+            const confirmation = confirm(`Yakin ingin menghapus buku "${currentBookData.title}" (ID: ${bookId}) secara permanen? Aksi ini tidak bisa dibatalkan.`);
+            
+            if (confirmation) {
+                try {
+                    // Hapus data buku dari Firebase
+                    await booksRef.child(bookId).remove();
+                    
+                    alert(`Buku "${currentBookData.title}" berhasil dihapus.`);
+                    // Redirect kembali ke halaman admin setelah berhasil
+                    window.location.href = 'admin.html'; 
+                } catch (error) {
+                    console.error("Error deleting book:", error);
+                    alert("Gagal menghapus buku. Cek konsol untuk detail.");
+                }
+            }
+        }
+
+        // ==============================================
+        // INITIALIZATION & EVENT LISTENERS
+        // ==============================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Panggil fungsi load saat halaman dimuat
+            loadBookDetail();
+            
+            // Pasang event listener untuk tombol dan form
+            document.getElementById('btn-edit').addEventListener('click', toggleEditBar);
+            document.getElementById('btn-hapus').addEventListener('click', deleteBook);
+            document.getElementById('edit-book-form').addEventListener('submit', submitEditBook);
+        });
+
+    </script>
+    <script src="js/script.js"></script>
+    <script src="js/profil.js"></script>
+</body>
+</html>

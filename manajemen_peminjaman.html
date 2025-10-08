@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Peminjaman | Admin Libra</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/profil.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        // Konfigurasi Proyek LIBRA Library Area Anda
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdVYKc6waij3pmxI9dLDSBIgbYiFIRr3A",
+            authDomain: "libra-library-area.firebaseapp.com",
+            databaseURL: "https://libra-library-area-default-rtdb.asia-southeast1.firebasedatabase.app", 
+            projectId: "libra-library-area",
+            storageBucket: "libra-library-area.firebasestorage.app",
+            messagingSenderId: "455509444693",
+            appId: "1:455509444693:web:883766ec8a49032f0b2cdc",
+        };
+        
+        // Inisialisasi Firebase
+        firebase.initializeApp(firebaseConfig);
+        const dbRef = firebase.database().ref(); 
+        
+        // Tailwind Config (untuk utility classes di HTML)
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // Ini hanya untuk utility classes Tailwind
+                        'primary': '#4f46e5', 
+                        'secondary': '#10b981', 
+                        'accent': '#f59e0b', 
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* FIX: Mendefinisikan variabel CSS di root agar dapat diakses oleh selector kustom (.btn-success, .btn-primary) */
+        :root {
+            --primary: #4f46e5;         /* Indigo 600 */
+            --secondary: #10b981;       /* Emerald 500 */
+            --accent: #f59e0b;          /* Amber 500 */
+            --info-color: #3b82f6;      /* Blue 500 */
+            --warning-color: #f59e0b;   /* Amber 500 */
+            --success-color: #10b981;   /* Emerald 500 - HIJAU */
+            --danger-color: #ef4444;    /* Red 500 */
+        }
+
+        .admin-tab-button {
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #6b7280; 
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .admin-tab-button:hover {
+            color: var(--primary);
+            border-color: #e0e7ff; 
+        }
+        .admin-tab-button.active-tab {
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+        .transaction-item {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background-color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        .transaction-detail {
+            display: flex;
+            align-items: flex-start;
+        }
+        .transaction-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: flex-end;
+            align-items: center;
+        }
+        
+        /* Gaya Tombol Kustom */
+        .btn {
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9em;
+            border: none;
+        }
+        /* Tombol Cari (Biru/Ungu) */
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: #3730a3; }
+        /* Tombol Aksi Positif (Hijau) */
+        .btn-success { background-color: var(--success-color); color: white; }
+        .btn-success:hover { background-color: #059669; }
+        /* Tombol Aksi Negatif (Merah) */
+        .btn-danger { background-color: var(--danger-color); color: white; }
+        .btn-danger:hover { background-color: #dc2626; }
+        /* Tombol Non-aktif (Abu-abu) */
+        .btn-info { background-color: #9ca3af; color: white; cursor: not-allowed; }
+        
+        /* Gaya Status */
+        .status-admin {
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .status-diajukan { background-color: #bfdbfe; color: #1e40af; }
+        .status-diacc { background-color: #fde68a; color: #b45309; }
+        .status-dipinjam { background-color: #a7f3d0; color: #065f46; }
+        .status-dikembalikan { background-color: #d1d5db; color: #4b5563; }
+        .status-ditolak, .status-dibatalkan { background-color: #fecaca; color: #991b1b; }
+        .status-telat { background-color: #ef4444; color: white; font-weight: bold; }
+
+        @media (min-width: 768px) {
+            .transaction-item {
+                flex-direction: row;
+                align-items: center;
+            }
+            .transaction-actions {
+                width: 50%;
+                justify-content: flex-end;
+            }
+        }
+    </style>
+</head>
+<body id="admin-pinjam-management-page" class="bg-gray-bg min-h-screen flex flex-col">
+    <header class="header">
+        <div id="hamburger-menu" class="hamburger order-1"><i class="fas fa-bars"></i></div>
+        
+        <div class="logo order-2"><a href="admin.html">Libra-Admin</a></div>
+        
+        <div class="header-right-menu order-3">
+            <div id="profile-icon" class="profile-icon">
+                <img id="header-profile-img" src="img/default_user.png" alt="Profil">
+                <i class="fas fa-user-circle default-icon"></i> 
+            </div>
+        </div>
+
+        <nav class="nav-menu">
+            <a href="admin.html">Beranda</a>
+            <a href="manajemen_peminjaman.html" class="active">Manajemen Peminjaman</a>
+            <a href="manajemen_akun.html">Manajemen Anggota</a>
+            <a href="saran_admin.html">Saran & Kritik User</a>
+        </nav>
+    </header>
+
+    <main class="flex-grow container mx-auto p-4 md:p-8">
+        <div class="bg-white p-6 md:p-10 rounded-xl shadow-2xl transition duration-300">
+            <h2 class="text-3xl font-extrabold text-gray-800 mb-6 border-b-4 border-primary pb-2 flex items-center">
+                <i class="fas fa-exchange-alt mr-3 text-primary"></i> Manajemen Peminjaman
+            </h2>
+
+            <div class="mb-6 flex space-x-3">
+                <input type="text" id="transaction-search-input" placeholder="Cari berdasarkan ID Transaksi atau Username..."
+                    class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-150"
+                    onkeyup="performSearch()">
+                <button class="btn btn-primary" onclick="performSearch()">
+                    <i class="fas fa-search"></i> Cari
+                </button>
+            </div>
+
+            <div class="flex flex-wrap border-b border-gray-200 mb-6 admin-nav">
+                <button id="semua-tab" class="admin-tab-button" onclick="changeStatusTab('semua')">Semua</button>
+                <button id="diajukan-tab" class="admin-tab-button active-tab" onclick="changeStatusTab('diajukan')">Diajukan</button>
+                <button id="diacc-tab" class="admin-tab-button" onclick="changeStatusTab('diacc')">Diterima</button>
+                <button id="dipinjam-tab" class="admin-tab-button" onclick="changeStatusTab('dipinjam')">Dipinjam</button>
+                <button id="dikembalikan-tab" class="admin-tab-button" onclick="changeStatusTab('dikembalikan')">Dikembalikan</button>
+                <button id="ditolak-tab" class="admin-tab-button" onclick="changeStatusTab('ditolak')">Ditolak</button>
+                <button id="dibatalkan-tab" class="admin-tab-button" onclick="changeStatusTab('dibatalkan')">Dibatalkan</button>
+            </div>
+
+            <div id="transaction-list-container" class="space-y-4">
+                <p class="text-center text-gray-500">Memuat daftar transaksi...</p>
+            </div>
+        </div>
+    </main>
+
+    <div id="profile-sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <button id="close-sidebar" class="close-btn">&times;</button>
+        </div>
+        <div class="profile-info text-center p-4">
+            <img id="sidebar-profile-img" src="img/default_user.png" alt="Foto Profil" class="w-24 h-24 rounded-full mx-auto border-4 border-white shadow-lg">
+            <h3 id="sidebar-username" class="mt-3 text-xl font-semibold">Pengunjung</h3>
+        </div>
+        
+        <nav class="sidebar-nav pt-4">
+            <a href="#" class="sidebar-link login-feature" id="link-edit-profile-photo">
+                <i class="fas fa-camera mr-3"></i> Edit Foto Profil
+            </a>
+            
+            <a href="reset_password.html" class="sidebar-link login-feature" id="link-reset-password">
+                <i class="fas fa-key mr-3"></i> Reset Password
+            </a>
+            
+            <hr class="my-4 border-gray-200 login-feature">
+            
+            <a href="login.html" class="sidebar-link logout-link" id="sidebar-auth-link">
+                <i class="fas fa-sign-in-alt mr-3" id="auth-icon"></i> <span id="auth-text">Login/Daftar</span>
+            </a>
+        </nav>
+    </div>
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <div id="edit-photo-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden z-[1000]">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm mx-4">
+            <h3 class="text-xl font-bold mb-4">Ubah Foto Profil</h3>
+            <form id="edit-photo-form">
+                <input type="file" id="modal-foto-upload" accept="image/*" required class="w-full mb-4 p-2 border rounded">
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="close-modal" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded hover:bg-indigo-700">Simpan Foto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+        // Variabel global untuk state
+        let currentStatusFilter = 'diajukan';
+        let allTransactionData = {}; 
+
+        // --- HELPER UNTUK FORMAT RUPIAH ---
+        const formatRupiah = (amount) => {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0
+            }).format(amount);
+        };
+
+        // --- HELPER UNTUK MENGHITUNG DENDA ---
+        /**
+         * Menghitung denda keterlambatan: Hari ke-1 = 10.000, Hari berikutnya + 5.000.
+         * @param {number} daysLate - Jumlah hari keterlambatan (harus > 0).
+         * @returns {number} Total denda dalam Rupiah.
+         */
+        function calculateLateFee(daysLate) {
+            if (daysLate <= 0) {
+                return 0;
+            }
+            // Formula: 10000 + (Hari Terlambat - 1) * 5000
+            return 10000 + (daysLate - 1) * 5000;
+        }
+
+        // --- HELPER UNTUK MENGUBAH STATUS KEY MENJADI TEKS TAMPILAN ---
+        function getStatusDisplayText(statusKey) {
+             const statusMap = {
+                'semua': 'Semua Transaksi', 
+                'diajukan': 'Diajukan',
+                'diacc': 'DITERIMA', 
+                'dipinjam': 'Dipinjam',
+                'dikembalikan': 'Dikembalikan',
+                'ditolak': 'Ditolak',
+                'dibatalkan': 'Dibatalkan'
+             };
+             return statusMap[statusKey] || statusKey;
+        }
+        
+        // --- MOCK FUNGSI (HAPUS JIKA script.js SUDAH DIMUAT) ---
+        // Asumsi fungsi ini ada di script.js
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+        async function getAllData() { 
+            // Mock data for demonstration purposes
+            return { 
+                users: [{id: 1, username: 'user1', name: 'Budi Santoso'}], 
+                books: [{id: 101, title: 'Buku A: Sejarah', year: 2020, cover: 'img/book_a.jpg'}],
+                transactions: [
+                    { id: 1, userId: 1, bookId: 101, type: 'pinjam', status: 'diajukan', date: new Date(Date.now() - 86400000).toISOString() }, // Kemarin
+                    { id: 2, userId: 1, bookId: 101, type: 'pinjam', status: 'diacc', date: new Date(Date.now() - 2 * 86400000).toISOString(), dueDate: new Date(Date.now() + 86400000).toISOString(), activity: [{date: new Date(Date.now() - 2 * 86400000).toISOString(), action: 'Diajukan'}]}, 
+                    { id: 3, userId: 1, bookId: 101, type: 'pinjam', status: 'dipinjam', date: new Date(Date.now() - 10 * 86400000).toISOString(), dueDate: new Date(Date.now() - 2 * 86400000).toISOString(), activity: [{date: new Date(Date.now() - 10 * 86400000).toISOString(), action: 'Dipinjam'}]}, // Telat 2 hari
+                    { id: 4, userId: 1, bookId: 101, type: 'pinjam', status: 'dikembalikan', date: new Date(Date.now() - 30 * 86400000).toISOString(), returnedDate: new Date(Date.now() - 23 * 86400000).toISOString(), dueDate: new Date(Date.now() - 25 * 86400000).toISOString()},
+                ],
+                ebookHistory: [], bookmarks: [], suggestions: []
+            };
+        }
+        function getLoggedInUser() { 
+            return { id: 1, username: 'admin', role: 'admin' }; 
+        }
+        async function adminProcessTransaction(id, action) {
+             return { success: true, message: 'Simulasi sukses' };
+        }
+        // --- AKHIR MOCK FUNGSI ---
+
+
+        /**
+         * Mengubah tab status yang aktif dan memuat data transaksi baru.
+         */
+        window.changeStatusTab = (status) => {
+            currentStatusFilter = status;
+            document.querySelectorAll('.admin-tab-button').forEach(btn => btn.classList.remove('active-tab'));
+            
+            const targetTab = document.getElementById(`${status}-tab`);
+            if (targetTab) {
+                targetTab.classList.add('active-tab');
+            } else if (status === 'semua') {
+                 document.getElementById('semua-tab').classList.add('active-tab');
+            } else {
+                 document.getElementById('diajukan-tab').classList.add('active-tab');
+            }
+
+            renderAdminPinjamList(document.getElementById('transaction-search-input').value, status);
+        };
+
+        /**
+         * Memicu pembaruan daftar saat search input berubah.
+         */
+        window.performSearch = () => {
+             renderAdminPinjamList(document.getElementById('transaction-search-input').value, currentStatusFilter);
+        };
+
+        /**
+         * Fungsi utama untuk me-render daftar transaksi di tab yang sedang aktif.
+         */
+        async function renderAdminPinjamList(searchTerm = '', statusFilter = 'diajukan') {
+            const container = document.getElementById('transaction-list-container');
+            container.innerHTML = '<p class="text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i> Memuat data...</p>';
+            
+            try {
+                // 1. Ambil data
+                if (Object.keys(allTransactionData).length === 0) {
+                     const data = typeof getAllData === 'function' ? await getAllData() : { transactions: [], users: [], books: [] }; 
+                     allTransactionData = data;
+                }
+                
+                const data = allTransactionData;
+
+                // 2. Filter data
+                let filteredTransactions = data.transactions
+                    .filter(t => t.type === 'pinjam' && (statusFilter === 'semua' || t.status === statusFilter));
+
+                if (searchTerm) {
+                    const searchLower = searchTerm.toLowerCase();
+                    filteredTransactions = filteredTransactions.filter(t => {
+                        const idMatch = String(t.id).includes(searchLower);
+                        const user = data.users.find(u => u.id === t.userId);
+                        const usernameMatch = (user?.username || '').toLowerCase().includes(searchLower) ||
+                                              (user?.name || '').toLowerCase().includes(searchLower);
+
+                        return idMatch || usernameMatch;
+                    });
+                }
+
+                // 3. Sorting
+                if (statusFilter === 'dikembalikan') {
+                    filteredTransactions.sort((a, b) => new Date(b.returnedDate || b.date) - new Date(a.returnedDate || a.date));
+                } else {
+                    filteredTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                }
+
+
+                if (filteredTransactions.length === 0) {
+                    container.innerHTML = `<p class="text-center text-gray-500">Tidak ada transaksi berstatus **${getStatusDisplayText(statusFilter)}** yang ditemukan.</p>`;
+                    return;
+                }
+
+                // 4. Render List
+                container.innerHTML = '';
+                filteredTransactions.forEach(t => {
+                    const book = data.books.find(b => b.id === t.bookId);
+                    const user = data.users.find(u => u.id === t.userId);
+                    
+                    if (!book || !user) return;
+
+                    const coverSrc = book.cover && book.cover.startsWith('data:image') ? book.cover : (book.cover || 'img/default.jpg');
+                    let statusText = getStatusDisplayText(t.status);
+                    let statusClass = `status-${t.status.toLowerCase()}`;
+                    let actionButtons = '';
+                    let detailInfo = '';
+                    let lateFeeDisplay = ''; // Variabel untuk menampung tampilan denda
+                    
+                    const now = Date.now();
+                    const dueDate = t.dueDate ? new Date(t.dueDate).getTime() : null;
+                    let diffDays = null;
+                    
+                    let activityList = t.activity ? t.activity.map(a => `<li>[${formatDate(a.date)}] ${a.action}</li>`).join('') : '';
+
+                    if (dueDate) {
+                        diffDays = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
+                        
+                        // Cek Keterlambatan dan Hitung Denda
+                        if (t.status === 'dipinjam' && diffDays < 0) {
+                            const daysLate = Math.abs(diffDays);
+                            const totalFee = calculateLateFee(daysLate);
+                            
+                            statusClass = 'status-telat'; 
+                            statusText += ` (TELAT ${daysLate} hari)`;
+                            
+                            // Tampilan Denda Keterlambatan
+                            lateFeeDisplay = `
+                                <p class="text-sm mt-1 font-bold text-red-700">
+                                    <i class="fas fa-hand-holding-usd mr-1"></i> Denda Keterlambatan: ${formatRupiah(totalFee)}
+                                </p>
+                            `;
+                        }
+                    }
+                    
+                    const transactionDate = formatDate(t.date);
+                    const returnedDateText = t.returnedDate ? `<p class="text-sm"><strong>Tgl Kembali:</strong> ${formatDate(t.returnedDate)}</p>` : '';
+
+
+                    // Logika Tombol Aksi Admin: SEMUA TOMBOL POSITIF MENGGUNAKAN btn-success (HIJAU)
+                    if (t.status === 'diajukan') {
+                        actionButtons = `
+                            <button class="btn btn-success" onclick="adminProcessTransactionWrapper(${t.id}, 'acc')">
+                                <i class="fas fa-check-circle mr-1"></i> Terima (ACC)
+                            </button>
+                            <button class="btn btn-danger" onclick="adminProcessTransactionWrapper(${t.id}, 'tolak')">
+                                <i class="fas fa-times-circle mr-1"></i> Tolak
+                            </button>
+                        `;
+                    } else if (t.status === 'diacc') {
+                        actionButtons = `
+                            <button class="btn btn-success" onclick="adminProcessTransactionWrapper(${t.id}, 'pinjam')">
+                                <i class="fas fa-hand-holding-box mr-1"></i> Serahkan Buku
+                            </button>
+                            <button class="btn btn-danger" onclick="adminProcessTransactionWrapper(${t.id}, 'batal')">
+                                <i class="fas fa-ban mr-1"></i> Batalkan
+                            </button>
+                        `;
+                         detailInfo = `<p class="text-xs font-bold text-amber-600 mt-2">Batas Ambil: ${Math.max(0, diffDays)} hari lagi!</p>`;
+                    } else if (t.status === 'dipinjam') {
+                        actionButtons = `
+                            <button class="btn btn-success" onclick="adminProcessTransactionWrapper(${t.id}, 'kembali')">
+                                <i class="fas fa-undo mr-1"></i> Terima Pengembalian
+                            </button>
+                        `;
+                    } else {
+                        actionButtons = `<button class="btn btn-info" disabled><i class="fas fa-history mr-1"></i> Selesai/Tidak Aktif</button>`;
+                    }
+
+
+                    container.innerHTML += `
+                        <div class="transaction-item" style="border-left: 5px solid ${t.status === 'diajukan' ? 'var(--info-color)' : (t.status === 'diacc' ? 'var(--warning-color)' : (t.status === 'dipinjam' ? 'var(--success-color)' : 'var(--danger-color)'))};">
+                            <div class="transaction-detail flex-grow">
+                                <img src="${coverSrc}" alt="Cover" onerror="this.onerror=null; this.src='img/default.jpg';" class="w-16 h-24 object-cover rounded shadow-md mr-4">
+                                <div>
+                                    <h4 class="text-lg font-bold text-gray-800">${book.title} (${book.year})</h4>
+                                    <p class="text-sm text-gray-600"><strong>ID Transaksi:</strong> <span class="font-mono text-primary">${t.id}</span></p>
+                                    <p class="text-sm text-gray-600"><strong>Peminjam:</strong> ${user.name} (<span class="text-secondary">@${user.username}</span>)</p>
+                                    <p class="text-sm text-gray-600"><strong>Diajukan:</strong> ${transactionDate}</p>
+                                    ${t.status !== 'diajukan' && t.status !== 'ditolak' && t.status !== 'dibatalkan' ? `<p class="text-sm text-gray-600"><strong>${t.status === 'diacc' ? 'Batas Ambil' : 'Jatuh Tempo'}:</strong> ${formatDate(t.dueDate)}</p>` : ''}
+                                    ${returnedDateText}
+                                    <p class="text-sm mt-2">Status: <span class="${statusClass} status-admin font-bold px-3 py-1 rounded-full">${statusText}</span></p>
+                                    ${lateFeeDisplay} ${detailInfo}
+                                </div>
+                            </div>
+                            <div class="transaction-actions mt-4 md:mt-0">
+                                ${actionButtons}
+                                <details class="mt-2 text-sm w-full md:w-auto">
+                                    <summary style="cursor: pointer; color: var(--primary); list-style: none; display: block; text-align: right; font-weight: 500;">
+                                        <i class="fas fa-list-ul mr-1"></i> Log Aktivitas
+                                    </summary>
+                                    <ul class="text-left w-full mt-2" style="list-style-type: none; font-size: 0.8em; background: #f0f4f8; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; max-height: 100px; overflow-y: auto;">
+                                        ${activityList || '<li>Tidak ada aktivitas tercatat.</li>'}
+                                    </ul>
+                                </details>
+                            </div>
+                        </div>
+                    `;
+                });
+
+            } catch (error) {
+                console.error("Render Error:", error);
+                container.innerHTML = `<p class="text-center text-red-500">Gagal memuat data: ${error.message}</p>`;
+            }
+        }
+        
+        /**
+         * Wrapper untuk adminProcessTransaction (dari script.js)
+         */
+        window.adminProcessTransactionWrapper = async (transactionId, action) => {
+             if (typeof adminProcessTransaction !== 'function') {
+                alert("Fungsi adminProcessTransaction tidak ditemukan. Pastikan script.js dimuat dengan benar.");
+                return;
+             }
+             
+             const confirmation = confirm(`Anda yakin ingin ${action.toUpperCase()} transaksi ID ${transactionId}?`);
+             if (!confirmation) return;
+
+             try {
+                 const result = await adminProcessTransaction(transactionId, action);
+                 
+                 if (result.success) {
+                    alert(`Transaksi ID ${transactionId} berhasil diproses dengan aksi ${action.toUpperCase()}.`);
+                 } else {
+                     alert(`Gagal memproses transaksi: ${result.message}`);
+                 }
+
+                 allTransactionData = {};
+                 renderAdminPinjamList(document.getElementById('transaction-search-input').value, currentStatusFilter);
+             } catch (error) {
+                 alert(`Terjadi kesalahan sistem: ${error.message}`);
+             }
+        }
+
+        // --- Logika Inisialisasi Halaman ---
+        document.addEventListener('DOMContentLoaded', async () => {
+             const user = typeof getLoggedInUser === 'function' ? getLoggedInUser() : null;
+             
+             if (!user || user.role !== 'admin') {
+                document.querySelector('main').innerHTML = '<h2 class="text-center text-3xl font-bold text-red-500 mt-20 p-8 bg-white rounded-xl shadow-xl">Akses Ditolak. Halaman ini hanya untuk Admin.</h2>';
+                return;
+             }
+
+             changeStatusTab('diajukan');
+        });
+    </script>
+
+    <script src="js/script.js"></script>
+    <script src="js/profil.js"></script>
+</body>
+</html>

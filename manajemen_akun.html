@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Anggota | Admin Libra</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/profil.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        // Konfigurasi Proyek LIBRA Library Area Anda (Sama seperti template)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdVYKc6waij3pmxI9dLDSBIgbYiFIRr3A",
+            authDomain: "libra-library-area.firebaseapp.com",
+            databaseURL: "https://libra-library-area-default-rtdb.asia-southeast1.firebasedatabase.app", 
+            projectId: "libra-library-area",
+            storageBucket: "libra-library-area.firebasestorage.app",
+            messagingSenderId: "455509444693",
+            appId: "1:455509444693:web:883766ec8a49032f0b2cdc",
+        };
+        
+        // Inisialisasi Firebase
+        firebase.initializeApp(firebaseConfig);
+        const dbRef = firebase.database().ref(); 
+        
+        // Tailwind Config (sama seperti template)
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#4f46e5', 
+                        'secondary': '#10b981', 
+                        'accent': '#f59e0b', 
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Gaya Kustom Tambahan untuk Item Anggota */
+        :root {
+            --primary: #4f46e5;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+        }
+
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn {
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9em;
+            border: none;
+        }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: #3730a3; }
+        .btn-danger { background-color: var(--danger-color); color: white; }
+        .btn-danger:hover { background-color: #dc2626; }
+        .btn-info { background-color: #9ca3af; color: white; cursor: not-allowed; }
+
+        @media (max-width: 767px) {
+            .user-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            .user-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+    </style>
+</head>
+<body id="admin-user-management-page" class="bg-gray-bg min-h-screen flex flex-col">
+    <header class="header">
+        <div id="hamburger-menu" class="hamburger order-1"><i class="fas fa-bars"></i></div>
+        
+        <div class="logo order-2"><a href="admin.html">Libra-Admin</a></div>
+        
+        <div class="header-right-menu order-3">
+            <div id="profile-icon" class="profile-icon">
+                <img id="header-profile-img" src="img/default_user.png" alt="Profil">
+                <i class="fas fa-user-circle default-icon"></i> 
+            </div>
+        </div>
+
+        <nav class="nav-menu">
+            <a href="admin.html">Beranda</a>
+            <a href="manajemen_peminjaman.html">Manajemen Peminjaman</a>
+            <a href="manajemen_akun.html" class="active">Manajemen Anggota</a>
+            <a href="saran_admin.html">Saran & Kritik User</a>
+        </nav>
+    </header>
+
+    <main class="flex-grow container mx-auto p-4 md:p-8">
+        <div class="bg-white p-6 md:p-10 rounded-xl shadow-2xl transition duration-300">
+            <h2 class="text-3xl font-extrabold text-gray-800 mb-6 border-b-4 border-primary pb-2 flex items-center">
+                <i class="fas fa-users mr-3 text-primary"></i> Manajemen Anggota
+            </h2>
+
+            <div class="mb-6 flex space-x-3">
+                <input type="text" id="user-search-input" placeholder="Cari berdasarkan Username, Nama, atau Email..."
+                    class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-150"
+                    onkeyup="performSearch()">
+                <button class="btn btn-primary" onclick="performSearch()">
+                    <i class="fas fa-search"></i> Cari
+                </button>
+            </div>
+
+            <div id="user-list-container" class="space-y-4">
+                <p class="text-center text-gray-500">Memuat daftar anggota...</p>
+            </div>
+        </div>
+    </main>
+
+    <div id="profile-sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <button id="close-sidebar" class="close-btn">&times;</button>
+        </div>
+        <div class="profile-info text-center p-4">
+            <img id="sidebar-profile-img" src="img/default_user.png" alt="Foto Profil" class="w-24 h-24 rounded-full mx-auto border-4 border-white shadow-lg">
+            <h3 id="sidebar-username" class="mt-3 text-xl font-semibold">Pengunjung</h3>
+        </div>
+        
+        <nav class="sidebar-nav pt-4">
+            <a href="#" class="sidebar-link login-feature" id="link-edit-profile-photo">
+                <i class="fas fa-camera mr-3"></i> Edit Foto Profil
+            </a>
+            
+            <a href="reset_password.html" class="sidebar-link login-feature" id="link-reset-password">
+                <i class="fas fa-key mr-3"></i> Reset Password
+            </a>
+            
+            <hr class="my-4 border-gray-200 login-feature">
+            
+            <a href="login.html" class="sidebar-link logout-link" id="sidebar-auth-link">
+                <i class="fas fa-sign-in-alt mr-3" id="auth-icon"></i> <span id="auth-text">Login/Daftar</span>
+            </a>
+        </nav>
+    </div>
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <div id="edit-photo-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden z-[1000]">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm mx-4">
+            <h3 class="text-xl font-bold mb-4">Ubah Foto Profil</h3>
+            <form id="edit-photo-form">
+                <input type="file" id="modal-foto-upload" accept="image/*" required class="w-full mb-4 p-2 border rounded">
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="close-modal" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded hover:bg-indigo-700">Simpan Foto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Variabel global untuk state
+        let allUserData = {}; // Variabel untuk menyimpan data semua user
+
+        // --- MOCK FUNGSI KHUSUS UNTUK MANAJEMEN AKUN (Ganti dengan implementasi Firebase di script.js) ---
+        // Asumsi fungsi ini ada di script.js
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+        
+        // Mock getAllData (seperti yang ada di script.js)
+        async function getAllData() { 
+            // Mock data untuk demonstrasi
+            return { 
+                users: [
+                    { id: 1, username: 'superadmin', name: 'Admin Utama', email: 'admin@libra.com', role: 'admin', profilePicture: null },
+                    { id: 2, username: 'budi_santoso', name: 'Budi Santoso', email: 'budi@mail.com', role: 'user', profilePicture: null }, 
+                    { id: 3, username: 'siti_dewi', name: 'Siti Dewi', email: 'siti@mail.com', role: 'user', profilePicture: null },
+                    { id: 4, username: 'pengguna_lama', name: 'Pengguna Lama', email: 'lama@mail.com', role: 'user', profilePicture: null }
+                ], 
+                books: [], transactions: [], ebookHistory: [], bookmarks: [], suggestions: []
+            };
+        }
+        
+        // Mock getLoggedInUser (seperti yang ada di script.js)
+        function getLoggedInUser() { 
+            return { id: 1, username: 'admin', role: 'admin' }; 
+        }
+        
+        /**
+         * Wrapper Simulasi untuk fungsi Penghapusan Akun Admin (Admin Delete User)
+         * Implementasi Firebase yang sebenarnya harus ada di file script.js.
+         */
+        async function adminDeleteUser(userId) {
+            // Tempatkan logika Firebase Realtime Database di sini:
+            // e.g., await firebase.database().ref('users/' + userId).remove();
+            
+            // SIMULASI:
+            await new Promise(resolve => setTimeout(resolve, 500)); 
+            if (userId == 1) { // User ID 1 dianggap Super Admin
+                return { success: false, message: 'Tidak diizinkan menghapus akun Super Admin.' };
+            }
+            return { success: true, message: 'Akun berhasil dihapus (Simulasi).' };
+        }
+        // --- AKHIR MOCK FUNGSI ---
+
+        /**
+         * Memicu pembaruan daftar saat search input berubah.
+         */
+        window.performSearch = () => {
+            renderAdminUserList(document.getElementById('user-search-input').value);
+        };
+
+        /**
+         * Wrapper untuk memanggil fungsi penghapusan akun.
+         */
+        window.adminDeleteUserWrapper = async (userId) => {
+            if (typeof adminDeleteUser !== 'function') {
+                alert("Fungsi adminDeleteUser tidak ditemukan. Pastikan script.js dimuat dengan benar dan berisi fungsi ini.");
+                return;
+            }
+            
+            const userToDelete = allUserData.find(u => u.id == userId);
+            
+            const confirmation = confirm(`Anda yakin ingin **MENGHAPUS** akun dengan username @${userToDelete.username}?\n\nSemua data peminjaman terkait akan tetap ada, tetapi akun ini akan hilang dari sistem.`);
+            if (!confirmation) return;
+
+            try {
+                const result = await adminDeleteUser(userId);
+                
+                if (result.success) {
+                    alert(`Akun @${userToDelete.username} berhasil dihapus.`);
+                    // Reset data cache dan render ulang
+                    allUserData = {}; 
+                } else {
+                    alert(`Gagal menghapus akun: ${result.message}`);
+                }
+                renderAdminUserList(document.getElementById('user-search-input').value);
+            } catch (error) {
+                alert(`Terjadi kesalahan sistem: ${error.message}`);
+            }
+        }
+
+        /**
+         * Fungsi utama untuk me-render daftar akun.
+         */
+        async function renderAdminUserList(searchTerm = '') {
+            const container = document.getElementById('user-list-container');
+            container.innerHTML = '<p class="text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i> Memuat data anggota...</p>';
+            
+            try {
+                // 1. Ambil data
+                if (Object.keys(allUserData).length === 0) {
+                    const data = typeof getAllData === 'function' ? await getAllData() : { users: [] }; 
+                    allUserData = data.users || [];
+                }
+                
+                let filteredUsers = allUserData;
+
+                // 2. Filter data
+                if (searchTerm) {
+                    const searchLower = searchTerm.toLowerCase();
+                    filteredUsers = filteredUsers.filter(u => {
+                        const idMatch = String(u.id).includes(searchLower);
+                        const usernameMatch = (u.username || '').toLowerCase().includes(searchLower);
+                        const nameMatch = (u.name || '').toLowerCase().includes(searchLower);
+                        const emailMatch = (u.email || '').toLowerCase().includes(searchLower);
+
+                        return idMatch || usernameMatch || nameMatch || emailMatch;
+                    });
+                }
+                
+                // 3. Sorting (Sort by username)
+                filteredUsers.sort((a, b) => (a.username || '').localeCompare(b.username || ''));
+
+
+                if (filteredUsers.length === 0) {
+                    container.innerHTML = `<p class="text-center text-gray-500">Tidak ada anggota yang ditemukan dengan kata kunci tersebut.</p>`;
+                    return;
+                }
+
+                // 4. Render List
+                container.innerHTML = '';
+                filteredUsers.forEach(user => {
+                    // Role status
+                    const isUserAdmin = user.role === 'admin';
+                    const roleText = isUserAdmin ? 'ADMIN' : 'Anggota Biasa';
+                    const roleClass = isUserAdmin ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700';
+                    
+                    // Photo source
+                    const profilePicSrc = user.profilePicture && user.profilePicture.startsWith('data:image') ? user.profilePicture : 'img/default_user.png';
+                    
+                    // Tombol Hapus Akun
+                    const deleteButton = isUserAdmin 
+                        ? `<button class="btn btn-info" disabled><i class="fas fa-lock mr-1"></i> Admin Tidak Bisa Dihapus</button>`
+                        : `<button class="btn btn-danger" onclick="adminDeleteUserWrapper('${user.id}')"><i class="fas fa-trash mr-1"></i> Hapus Akun</button>`;
+
+                    container.innerHTML += `
+                        <div class="user-item border-l-4 ${isUserAdmin ? 'border-amber-500' : 'border-secondary'}">
+                            <div class="flex items-center space-x-4 flex-grow">
+                                <img src="${profilePicSrc}" alt="Profil" onerror="this.onerror=null; this.src='img/default_user.png';" class="w-16 h-16 object-cover rounded-full shadow-md">
+                                <div>
+                                    <h4 class="text-lg font-bold text-gray-800">${user.name || 'Nama Tidak Ada'}</h4>
+                                    <p class="text-sm text-gray-600 font-mono">ID: ${user.id} | @${user.username || 'N/A'}</p>
+                                    <p class="text-sm text-gray-600"><i class="fas fa-envelope mr-1"></i> ${user.email || 'N/A'}</p>
+                                    <span class="font-bold px-3 py-1 rounded-full text-xs ${roleClass} mt-1 inline-block">${roleText}</span>
+                                </div>
+                            </div>
+                            <div class="user-actions flex-shrink-0">
+                                ${deleteButton}
+                            </div>
+                        </div>
+                    `;
+                });
+
+            } catch (error) {
+                console.error("Render Error:", error);
+                container.innerHTML = `<p class="text-center text-red-500">Gagal memuat data anggota: ${error.message}</p>`;
+            }
+        }
+
+        // --- Logika Inisialisasi Halaman ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = typeof getLoggedInUser === 'function' ? getLoggedInUser() : null;
+            
+            // Cek apakah user adalah admin
+            if (!user || user.role !== 'admin') {
+                document.querySelector('main').innerHTML = '<h2 class="text-center text-3xl font-bold text-red-500 mt-20 p-8 bg-white rounded-xl shadow-xl">Akses Ditolak. Halaman ini hanya untuk Admin.</h2>';
+                return;
+            }
+
+            // Mulai render daftar akun
+            renderAdminUserList(''); 
+        });
+    </script>
+
+    <script src="js/script.js"></script>
+    <script src="js/profil.js"></script>
+</body>
+</html>
