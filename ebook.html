@@ -3,35 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ebook Digital | Libra</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title id="page-title">Ebook Digital | Libra</title>
+    <link rel="stylesheet" href="css/style.css"> 
     <link rel="stylesheet" href="css/profil.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-  // Konfigurasi Proyek LIBRA Library Area Anda
-  const firebaseConfig = {
-    apiKey: "AIzaSyCdVYKc6waij3pmxI9dLDSBIgbYiFIRr3A",
-    authDomain: "libra-library-area.firebaseapp.com",
-    databaseURL: "https://libra-library-area-default-rtdb.asia-southeast1.firebasedatabase.app", 
-    projectId: "libra-library-area",
-    storageBucket: "libra-library-area.firebasestorage.app",
-    messagingSenderId: "455509444693",
-    appId: "1:455509444693:web:883766ec8a49032f0b2cdc",
-  };
-  
-  // Inisialisasi Firebase
-  firebase.initializeApp(firebaseConfig);
-  
-  // Referensi ke root databes
-  const dbRef = firebase.database().ref(); 
-  
-  console.log("Firebase Realtime Database berhasil diinisialisasi.");
-</script>
-<script src="js/profil.js"></script>
-<script src="js/script.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        // Konfigurasi Proyek LIBRA Library Area Anda
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdVYKc6waij3pmxI9dLDSBIgbYiFIRr3A",
+            authDomain: "libra-library-area.firebaseapp.com",
+            databaseURL: "https://libra-library-area-default-rtdb.asia-southeast1.firebasedatabase.app", 
+            projectId: "libra-library-area",
+            storageBucket: "libra-library-area.firebasestorage.app",
+            messagingSenderId: "455509444693",
+            appId: "1:455509444693:web:883766ec8a49032f0b2cdc",
+        };
+        
+        // Inisialisasi Firebase
+        firebase.initializeApp(firebaseConfig);
+        
+        // Referensi ke root databes
+        const dbRef = firebase.database().ref(); 
+        
+        console.log("Firebase Realtime Database berhasil diinisialisasi.");
+
+        // Tailwind Config (DITAMBAHKAN AGAR KONSISTEN DENGAN pinjam.html)
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#4f46e5', // Indigo
+                        'secondary': '#10b981', // Green
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <script src="js/profil.js"></script>
+    <script src="js/script.js"></script>
+    
+    <style>
+        /* Definisi Warna dan Variabel Kustom (DITAMBAHKAN AGAR KONSISTEN DENGAN pinjam.html) */
+        :root {
+            --primary: #4f46e5;      /* Indigo 600 */
+            --secondary: #10b981;    /* Emerald 500 */
+            --info-color: #3b82f6;      /* Blue 500 */
+            --warning-color: #f59e0b;   /* Amber 500 */
+            --success-color: #10b981;   /* Emerald 500 */
+            --danger-color: #ef4444;    /* Red 500 */
+        }
+
+        /* Gaya Tombol Navigasi Tab Utama (DIPERBAIKI AGAR PERSIS SEPERTI pinjam.html) */
+        .main-tab-button {
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #4b5563; 
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            background: none;
+            border-radius: 0;
+        }
+        .main-tab-button:hover {
+             /* Dihapus agar mengikuti gaya pinjam.html yang hanya mengandalkan transisi */
+             border-color: transparent; 
+        }
+        .main-tab-button.active-tab {
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        /* Gaya tambahan untuk item history agar lebih rapi */
+        .history-item {
+            display: block;
+            background-color: white;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            transition: all 0.15s;
+        }
+        .history-item:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+    </style>
 </head>
 <body id="ebook-page">
     <header class="header">
@@ -57,16 +120,16 @@
     
     <main class="container">
 
-        <div class="tab-nav" style="display: flex; justify-content: space-around; background: rgb(255, 255, 255); padding: 10px; border-radius: 8px; margin-bottom: 20px;">
-            <button onclick="showEbookTab('beranda-ebook')" class="tab-nav" style="display: flex; justify-content: space-around; background: rgb(159, 158, 158); padding: 10px; border-radius: 0px; margin-bottom: 0px;">
+        <div class="flex border-b border-gray-200 mb-6" style="gap: 10px;">
+            <button id="tab-beranda" onclick="showEbookTab('beranda-ebook')" class="main-tab-button active-tab">
                 Koleksi Ebook
             </button>
-            <button onclick="showEbookTab('history-ebook')" class="tab-nav" style="display: flex; justify-content: space-around; background: rgb(159, 158, 158); padding: 10px; border-radius: 0px; margin-bottom: 0px">
+            <button id="tab-history" onclick="showEbookTab('history-ebook')" class="main-tab-button">
                 History Baca
             </button>
         </div>
 
-        <section id="beranda-ebook" class="tab-content">
+        <section id="beranda-ebook" class="tab-content block">
             <div class="search-section">
                 <input type="text" id="search-input" placeholder="Cari dan baca buku 0nline...">
                 <button id="search-button">Cari</button>
@@ -76,12 +139,17 @@
         </section>
 
         <section id="history-ebook" class="tab-content" style="display: none;">
-            <h3 class="text-2xl font-bold text-gray-700 mb-2">History Ebook yang Pernah Dibaca</h3>
-            <div id="ebook-history-list">
+            <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-4">
+                 <button id="delete-history-btn" class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-150 text-sm font-semibold" onclick="deleteEbookHistory()">
+                    <i class="fas fa-trash mr-1"></i> Hapus Semua History
+                 </button>
+            </div>
+            <div id="ebook-history-list" class="flex flex-col space-y-3">
                 </div>
         </section>
 
     </main>
+    
     <div id="profile-sidebar" class="sidebar">
         <div class="sidebar-header">
             <button id="close-sidebar" class="close-btn">&times;</button>
@@ -121,27 +189,38 @@
             </form>
         </div>
     </div>
-    <script src="js/script.js"></script>
-<script>
-    // JS untuk fungsionalitas Tab (Hanya di halaman ini)
-    function showEbookTab(id) {
-        // ... (Logika menyembunyikan/menampilkan tab yang sudah ada)
-        document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-        document.getElementById(id).style.display = 'block';
-        
-        // Panggil fungsi render yang sesuai
-        if (id === 'beranda-ebook') {
-            // Asumsi: renderBookList dan handleSearch ada di js/script.js
-            renderBookList('ebook-page'); 
-            handleSearch('ebook-page');
-        } else if (id === 'history-ebook') {
-            renderEbookHistory(); // Panggil fungsi baru
-        }
 
-        // Opsional: Perbarui styling tombol tab (misalnya dengan class 'active')
+<script>
+    function showEbookTab(id) {
+        // Sembunyikan semua konten tab
+        document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+        
+        // Hapus class 'active-tab' dari semua tombol
+        document.querySelectorAll('.main-tab-button').forEach(btn => btn.classList.remove('active-tab'));
+
+        // Tampilkan konten yang diminta
+        const targetContent = document.getElementById(id);
+        if (targetContent) targetContent.style.display = 'block';
+
+        // Aktifkan tombol yang sesuai
+        const targetButton = document.getElementById(`tab-${id.replace('-ebook', '')}`);
+        if (targetButton) targetButton.classList.add('active-tab');
+
+        // Sembunyikan tombol hapus history secara default, akan ditampilkan jika ada history
+        const deleteBtn = document.getElementById('delete-history-btn');
+        if (deleteBtn) deleteBtn.style.display = 'none';
+
+        // Panggil fungsi render yang sesuai (dari js/script.js)
+        if (id === 'beranda-ebook') {
+            if (typeof renderBookList === 'function') renderBookList('ebook-page'); 
+            if (typeof handleSearch === 'function') handleSearch('ebook-page');
+        } else if (id === 'history-ebook') {
+            // Panggil fungsi render history ebook
+            if (typeof renderEbookHistory === 'function') renderEbookHistory(); 
+        }
     }
+    
     document.addEventListener('DOMContentLoaded', () => {
-        // Inisialisasi: Tampilkan Koleksi Ebook dan render list buku
         showEbookTab('beranda-ebook'); 
     });
 </script>

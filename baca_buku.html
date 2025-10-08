@@ -10,6 +10,9 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.min.js"></script>
+    
     <script>
         // Konfigurasi Firebase (HARUS SAMA DENGAN FILE LAIN)
         const firebaseConfig = {
@@ -25,6 +28,9 @@
         firebase.initializeApp(firebaseConfig);
         const dbRef = firebase.database().ref(); 
         console.log("Firebase Realtime Database berhasil diinisialisasi.");
+        
+        // Atur workerSrc untuk PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.worker.min.js';
     </script>
     <script src="js/script.js"></script>
     <style>
@@ -36,11 +42,21 @@
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background-color: #f0f0f0; /* Latar belakang untuk membedakan */
         }
-        #pdf-viewer {
+        /* Style untuk canvas agar responsif */
+        #pdf-canvas {
             width: 100%;
-            height: 80vh; /* Tinggi yang lebih nyaman untuk membaca */
+            height: auto;
             border: none;
+            display: block; 
+            background-color: #fff; 
+        }
+        #pdf-viewer-wrapper {
+            /* Container untuk canvas agar bisa di-scroll jika PDF terlalu tinggi */
+            overflow-y: auto;
+            max-height: 80vh; 
+            width: 100%;
         }
     </style>
 </head>
@@ -67,17 +83,27 @@
         <h1 id="ebook-title" class="text-3xl font-bold text-center mb-4">Memuat Ebook...</h1>
 
         <div id="ebook-reader-container">
+            <div id="pdf-viewer-wrapper">
+                <canvas id="pdf-canvas"></canvas> 
             </div>
-            <div id="navigation-bar" class="flex justify-center items-center space-x-4 mb-4">
-                <button id="btn-prev-page" class="btn-primary bg-gray-500 hover:bg-gray-600 px-4 py-2 rounded disabled:opacity-50" disabled>
-                    <i class="fas fa-arrow-left"></i> Sebelumnya
-                </button>
-                <span id="current-page-info" class="text-xl font-semibold">Halaman: 1</span>
-                <button id="btn-next-page" class="btn-primary bg-primary hover:bg-indigo-700 px-4 py-2 rounded">
-                    Selanjutnya <i class="fas fa-arrow-right"></i>
-                </button>
+        </div>
+        
+        <div id="navigation-bar" class="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-4 mt-4">
+            <button id="btn-prev-page" class="btn-primary bg-gray-500 hover:bg-gray-600 px-4 py-2 rounded disabled:opacity-50 w-full sm:w-auto" disabled>
+                <i class="fas fa-arrow-left"></i> Sebelumnya
+            </button>
+            
+            <div class="flex items-center space-x-2">
+                <span class="font-semibold hidden sm:inline">Halaman:</span>
+                <input type="number" id="page-num-input" value="1" min="1" class="w-16 p-2 border rounded text-center" />
+                <span id="page-count-info" class="text-xl font-semibold">/ ?</span>
             </div>
-        <p id="last-read-info" class="text-center text-gray-500 mt-4 text-sm">Note: Klik Next/Prev Button untuk menyimpan history hlman.</p>
+
+            <button id="btn-next-page" class="btn-primary bg-primary hover:bg-indigo-700 px-4 py-2 rounded w-full sm:w-auto">
+                Selanjutnya <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+        <p id="last-read-info" class="text-center text-gray-500 mt-4 text-sm">Note: Progress akan tersimpan otomatis saat pindah halaman.</p>
     </main>
 
     <div id="profile-sidebar" class="sidebar">
@@ -89,6 +115,9 @@
             <h3 id="sidebar-username" class="mt-3 text-xl font-semibold">Pengunjung</h3>
         </div>
         <nav class="sidebar-nav pt-4">
+            <a href="history.html" class="sidebar-link login-feature">
+                <i class="fas fa-history mr-3"></i> Riwayat Bacaan
+            </a>
             <a href="#" class="sidebar-link login-feature" id="link-edit-profile-photo">
                 <i class="fas fa-camera mr-3"></i> Edit Foto Profil
             </a>
