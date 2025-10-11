@@ -103,7 +103,7 @@ async function initializeDatabase() {
                     { id: 4, userId: 2, bookId: 102, type: 'pinjam', status: 'dikembalikan', date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), returnedDate: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(), activity: [{ date: new Date().toISOString(), action: 'Buku berhasil dikembalikan.' }] },
                 ],
                 ebookHistory: [
-                    { userId: 2, bookId: 103, lastPage: 5, totalPages: 10, lastAccessDate: new Date().toISOString() }, // Menambahkan totalPages
+                    { userId: 2, bookId: 103, lastPage: 1, totalPages: 10, lastAccessDate: new Date().toISOString() }, // Menambahkan totalPages
                 ],
                 bookmarks: [
                     { userId: 2, bookId: 104 },

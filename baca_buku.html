@@ -31,10 +31,21 @@
         
         // Atur workerSrc untuk PDF.js
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.worker.min.js';
+        
+        // Tailwind Config (untuk memastikan utilitas berfungsi)
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#4f46e5', 
+                    },
+                }
+            }
+        }
     </script>
     <script src="js/script.js"></script>
     <style>
-        /* Gaya tambahan untuk reader */
+        /* Gaya dasar untuk reader */
         #ebook-reader-container {
             width: 100%;
             max-width: 900px;
@@ -42,9 +53,10 @@
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            background-color: #f0f0f0; /* Latar belakang untuk membedakan */
+            background-color: #f0f0f0; 
         }
-        /* Style untuk canvas agar responsif */
+        
+        /* Style untuk canvas agar responsif dan menyesuaikan lebar container */
         #pdf-canvas {
             width: 100%;
             height: auto;
@@ -52,11 +64,25 @@
             display: block; 
             background-color: #fff; 
         }
+        
+        /* Container untuk canvas agar bisa di-scroll secara vertikal */
         #pdf-viewer-wrapper {
-            /* Container untuk canvas agar bisa di-scroll jika PDF terlalu tinggi */
             overflow-y: auto;
-            max-height: 80vh; 
+            max-height: 85vh; /* Sedikit lebih besar agar pandangan lebih luas */
             width: 100%;
+        }
+        
+        /* Style untuk tombol navigasi */
+        .nav-btn-size {
+            /* Compact di mobile, medium di desktop */
+            padding: 8px 10px; 
+            font-size: 0.875rem; /* text-sm */
+        }
+        @media (min-width: 640px) { /* sm */
+            .nav-btn-size {
+                padding: 10px 18px;
+                font-size: 1rem; /* text-base */
+            }
         }
     </style>
 </head>
@@ -80,7 +106,7 @@
     </header>
 
     <main class="container py-8">
-        <h1 id="ebook-title" class="text-3xl font-bold text-center mb-4">Memuat Ebook...</h1>
+        <h1 id="ebook-title" class="text-xl sm:text-3xl font-bold text-center mb-4">Memuat Ebook...</h1>
 
         <div id="ebook-reader-container">
             <div id="pdf-viewer-wrapper">
@@ -88,19 +114,20 @@
             </div>
         </div>
         
-        <div id="navigation-bar" class="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-4 mt-4">
-            <button id="btn-prev-page" class="btn-primary bg-gray-500 hover:bg-gray-600 px-4 py-2 rounded disabled:opacity-50 w-full sm:w-auto" disabled>
-                <i class="fas fa-arrow-left"></i> Sebelumnya
+        <div id="navigation-bar" class="flex justify-between items-center max-w-xl mx-auto px-4 w-full mt-4 mb-4">
+            
+            <button id="btn-prev-page" class="bg-gray-500 hover:bg-gray-600 rounded disabled:opacity-50 text-white nav-btn-size" disabled>
+                <i class="fas fa-arrow-left"></i> <span class="hidden sm:inline">Sebelumnya</span>
             </button>
             
-            <div class="flex items-center space-x-2">
-                <span class="font-semibold hidden sm:inline">Halaman:</span>
-                <input type="number" id="page-num-input" value="1" min="1" class="w-16 p-2 border rounded text-center" />
-                <span id="page-count-info" class="text-xl font-semibold">/ ?</span>
+            <div class="flex items-center space-x-1 sm:space-x-2">
+                <span class="font-semibold text-sm hidden md:inline">Halaman:</span>
+                <input type="number" id="page-num-input" value="1" min="1" class="w-12 sm:w-16 p-1 sm:p-2 border rounded text-center text-sm font-semibold" />
+                <span id="page-count-info" class="font-semibold text-sm">/ ?</span>
             </div>
 
-            <button id="btn-next-page" class="btn-primary bg-primary hover:bg-indigo-700 px-4 py-2 rounded w-full sm:w-auto">
-                Selanjutnya <i class="fas fa-arrow-right"></i>
+            <button id="btn-next-page" class="bg-primary hover:bg-indigo-700 rounded text-white nav-btn-size">
+                <span class="hidden sm:inline">Selanjutnya</span> <i class="fas fa-arrow-right"></i>
             </button>
         </div>
         <p id="last-read-info" class="text-center text-gray-500 mt-4 text-sm">Note: Progress akan tersimpan otomatis saat pindah halaman.</p>
@@ -145,5 +172,220 @@
         </div>
     </div>
     <script src="js/profil.js"></script>
+    
+    <script>
+        let pdfDoc = null;
+        let pageNum = 1;
+        let pageRendering = false;
+        let pageNumPending = null;
+        const canvas = document.getElementById('pdf-canvas');
+        const ctx = canvas.getContext('2d');
+        const pageNumInput = document.getElementById('page-num-input');
+        const pageCountInfo = document.getElementById('page-count-info');
+
+        /**
+         * Mengambil data Ebook dari Firebase berdasarkan ID di URL
+         */
+        async function getEbookDataFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const ebookId = urlParams.get('id');
+            if (!ebookId) {
+                document.getElementById('ebook-title').textContent = "Error: ID Ebook tidak ditemukan.";
+                return null;
+            }
+            
+            try {
+                // Asumsi getAllData() ada di script.js
+                const data = typeof getAllData === 'function' ? await getAllData() : { books: [] };
+                const ebook = data.books.find(b => b.id === ebookId && b.isEbook);
+                
+                if (!ebook || !ebook.fileUrl) {
+                    document.getElementById('ebook-title').textContent = "Error: Ebook tidak ditemukan atau link file hilang.";
+                    return null;
+                }
+                document.getElementById('ebook-title').textContent = ebook.title || 'Ebook';
+                document.title = `${ebook.title || 'Ebook'} | Libra`;
+                return ebook;
+            } catch (error) {
+                console.error("Error fetching ebook data:", error);
+                document.getElementById('ebook-title').textContent = "Error: Gagal memuat data Ebook.";
+                return null;
+            }
+        }
+        
+        /**
+         * Fungsi inti untuk merender halaman PDF.
+         */
+        function renderPage(num) {
+            pageRendering = true;
+            pdfDoc.getPage(num).then(function(page) {
+                // Hitung skala berdasarkan lebar container
+                const viewport = page.getViewport({ scale: 1 });
+                const desiredWidth = canvas.clientWidth;
+                const scale = desiredWidth / viewport.width;
+                const scaledViewport = page.getViewport({ scale: scale });
+
+                canvas.height = scaledViewport.height;
+                canvas.width = desiredWidth;
+
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: scaledViewport
+                };
+                
+                const renderTask = page.render(renderContext);
+
+                renderTask.promise.then(function() {
+                    pageRendering = false;
+                    if (pageNumPending !== null) {
+                        // Render halaman berikutnya yang sedang menunggu
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                    // Simpan progress baca ke Firebase setelah render berhasil
+                    saveReadProgress(); 
+                });
+            });
+
+            // Update UI setelah meminta render
+            pageNumInput.value = num;
+            document.getElementById('btn-prev-page').disabled = num <= 1;
+            document.getElementById('btn-next-page').disabled = num >= pdfDoc.numPages;
+        }
+
+        /**
+         * Wrapper untuk memuat halaman, menangani antrian render.
+         */
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
+            }
+        }
+        
+        /**
+         * Memuat dokumen PDF dan inisialisasi tampilan.
+         */
+        async function loadPdf(fileUrl) {
+            try {
+                const loadingTask = pdfjsLib.getDocument(fileUrl);
+                pdfDoc = await loadingTask.promise;
+                const totalPages = pdfDoc.numPages;
+                pageCountInfo.textContent = `/ ${totalPages}`;
+                pageNumInput.setAttribute('max', totalPages);
+                
+                // Cek progress terakhir
+                pageNum = await getSavedProgress() || 1; 
+                if (pageNum > totalPages) pageNum = 1;
+
+                // Render halaman pertama/terakhir dibaca
+                renderPage(pageNum);
+
+            } catch (err) {
+                console.error('PDF loading error: ', err);
+                document.getElementById('ebook-title').textContent = `Gagal memuat PDF: ${err.message}`;
+                canvas.style.display = 'none';
+            }
+        }
+
+        /**
+         * Menyimpan halaman terakhir yang dibaca oleh user (Asumsi user sudah login).
+         */
+        function saveReadProgress() {
+             const user = typeof getLoggedInUser === 'function' ? getLoggedInUser() : null;
+             const urlParams = new URLSearchParams(window.location.search);
+             const ebookId = urlParams.get('id');
+
+             if (!user || !user.id || !ebookId) return;
+
+             const progressData = {
+                 userId: user.id,
+                 ebookId: ebookId,
+                 lastPage: pageNum,
+                 timestamp: new Date().toISOString()
+             };
+             // Simpan di path ebookHistory/{userId}_{ebookId}
+             dbRef.child(`ebookHistory/${user.id}_${ebookId}`).set(progressData)
+                 .then(() => console.log('Progress saved:', pageNum))
+                 .catch(error => console.error('Failed to save progress:', error));
+        }
+
+        /**
+         * Mengambil progress terakhir yang dibaca user.
+         */
+        async function getSavedProgress() {
+             const user = typeof getLoggedInUser === 'function' ? getLoggedInUser() : null;
+             const urlParams = new URLSearchParams(window.location.search);
+             const ebookId = urlParams.get('id');
+
+             if (!user || !user.id || !ebookId) return null;
+             
+             try {
+                 const snapshot = await dbRef.child(`ebookHistory/${user.id}_${ebookId}`).once('value');
+                 if (snapshot.exists()) {
+                     const data = snapshot.val();
+                     return data.lastPage;
+                 }
+             } catch (error) {
+                 console.log("Failed to retrieve progress:", error);
+                 return null;
+             }
+             return null;
+        }
+
+
+        // --- EVENT HANDLERS ---
+        
+        // Tombol Sebelumnya
+        document.getElementById('btn-prev-page').addEventListener('click', function() {
+            if (pdfDoc && pageNum <= pdfDoc.numPages && pageNum > 1) {
+                pageNum--;
+                queueRenderPage(pageNum);
+            }
+        });
+
+        // Tombol Selanjutnya
+        document.getElementById('btn-next-page').addEventListener('click', function() {
+            if (pdfDoc && pageNum < pdfDoc.numPages) {
+                pageNum++;
+                queueRenderPage(pageNum);
+            }
+        });
+        
+        // Input Halaman Manual
+        pageNumInput.addEventListener('change', function() {
+            let desiredPage = parseInt(this.value);
+            if (pdfDoc) {
+                 if (desiredPage >= 1 && desiredPage <= pdfDoc.numPages) {
+                     pageNum = desiredPage;
+                     queueRenderPage(pageNum);
+                 } else {
+                     alert(`Masukkan halaman antara 1 dan ${pdfDoc.numPages}.`);
+                     this.value = pageNum; // Kembalikan ke halaman saat ini
+                 }
+            }
+        });
+        
+        // Responsiveness: Render ulang saat ukuran jendela berubah (Debounced)
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+             clearTimeout(resizeTimer);
+             resizeTimer = setTimeout(() => {
+                 if (pdfDoc && !pageRendering) {
+                     // Render ulang dengan skala baru
+                     renderPage(pageNum); 
+                 }
+             }, 300); // Tunggu 300ms setelah resize selesai
+        });
+
+        // --- INISIALISASI ---
+        window.renderEbookReader = async function() {
+            const ebook = await getEbookDataFromUrl();
+            if (ebook && ebook.fileUrl) {
+                await loadPdf(ebook.fileUrl);
+            }
+        };
+    </script>
 </body>
 </html>
