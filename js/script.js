@@ -711,42 +711,73 @@ async function checkOverdueTransactions() { /* ... (Fungsi ini tetap sama) ... *
     }
 }
 
-// --- FUNGSI AUTHENTIKASI (LOGIN & DAFTAR) ---
-function handleLogin() { 
-    const form = document.getElementById('login-form');
-    if (!form) return;
+// ... (Bagian atas file script.js Anda, termasuk konfigurasi, variabel global, dan fungsi CRUD Firebase) ...
 
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const username = form.username.value;
-        const password = form.password.value;
-        
-        try {
-            const data = await getAllData();
-            const user = data.users.find(u => u.username === username && u.password === password);
+// =========================================================================================
+// === OTP SIMULATION FUNCTIONS (START) ====================================================
+// =========================================================================================
 
-            if (user) {
-                setLoggedInUser(user);
-                alert(`Login sukses! Selamat datang, ${user.name}`);
-                window.location.href = user.role === 'admin' ? 'admin.html' : 'index.html';
-            } else {
-                alert('Username atau Password salah! (Coba: admin/admin atau user1/user1)');
-            }
-        } catch (error) {
-             alert(error.message || 'Gagal login. Cek koneksi Anda.');
-        }
-    });
+// Global state/placeholder untuk timer countdown
+let otpCountdownTimer; 
+
+/**
+ * Mensimulasikan pembuatan Kode OTP 6 digit.
+ * CATATAN: Dalam implementasi nyata, ini harus dilakukan di sisi server yang aman.
+ */
+function generateOTP() {
+    // Generate a 6-digit random number for simulation
+    return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+/**
+ * Mengatur hitungan mundur untuk tombol kirim ulang OTP.
+ */
+function startResendCountdown(buttonEl) {
+    let timeLeft = 120; // 120 seconds
+    buttonEl.disabled = true;
+    buttonEl.classList.add('disabled'); // Tambahkan kelas untuk styling
+
+    // Hapus timer sebelumnya jika ada
+    if (otpCountdownTimer) clearInterval(otpCountdownTimer); 
+
+    const updateButtonText = () => {
+         if (timeLeft > 0) {
+            buttonEl.textContent = `Kirim Ulang Kode (${timeLeft}s)`;
+            timeLeft--;
+        } else {
+            clearInterval(otpCountdownTimer);
+            buttonEl.textContent = 'Kirim Ulang Kode';
+            buttonEl.disabled = false;
+            buttonEl.classList.remove('disabled'); // Hapus kelas styling
+        }
+    };
+
+    updateButtonText(); // Panggilan awal
+    otpCountdownTimer = setInterval(updateButtonText, 1000);
+}
+
+
+// =========================================================================================
+// === FUNGSI AUTHENTIKASI (LOGIN & DAFTAR) - MODIFIED ======================================
+// =========================================================================================
+
+// ... (Pastikan function handleLogin() tetap ada di atas atau di bawahnya jika Anda memilikinya) ...
+
 function handleRegistration() { 
+    // Mengambil semua form (Langkah 1, 2, dan 3 yang baru)
     const form1 = document.getElementById('registration-step1');
-    const form2 = document.getElementById('registration-step2');
+    const form2 = document.getElementById('registration-step2'); // NEW: OTP Form
+    const form3 = document.getElementById('registration-step3'); // OLD: Step 2
+    
     const fotoUploadInput = document.getElementById('foto-upload');
     const fotoPreview = document.getElementById('foto-preview');
     const fotoHiddenInput = document.getElementById('profile_picture_data');
+    const btnResendOtp = document.getElementById('btn-resend-otp');
+    const otpInfoEl = document.getElementById('otp-info');
     
-    if (!form1 || !form2 || !fotoUploadInput) return;
+    if (!form1 || !form2 || !form3 || !fotoUploadInput) return;
     
+    // Logika upload foto tetap sama
     fotoUploadInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
@@ -769,65 +800,152 @@ function handleRegistration() {
         }
     });
 
+    // --- LOGIC STEP 1: Collect Data & Send OTP ---
     form1.addEventListener('submit', (e) => {
         e.preventDefault();
-        
         const photoData = fotoHiddenInput.value;
-        if (!photoData || photoData.length < 100) { 
-             alert('Anda wajib mengunggah Foto Profil!');
-             return;
+        const userEmail = form1.email.value;
+
+        if (!photoData || photoData.length < 100) {
+            alert('Anda wajib mengunggah Foto Profil!');
+            return;
         }
 
-        sessionStorage.setItem('tempRegData', JSON.stringify({
-            name: form1.nama.value,
-            address: form1.alamat.value,
-            phone: form1.nohp.value,
-            email: form1.email.value,
-            profilePicture: photoData, 
+        // 1. Generate OTP
+        const otpCode = generateOTP();
+        
+        // 2. Simpan semua data sementara (termasuk OTP) di sessionStorage
+        sessionStorage.setItem('tempRegData', JSON.stringify({ 
+            name: form1.nama.value, 
+            address: form1.alamat.value, 
+            phone: form1.nohp.value, 
+            email: userEmail, 
+            profilePicture: photoData,
+            // Simpan OTP sementara (simulasi)
+            otp: otpCode, 
         }));
+
+        // 3. SIMULASI: Tampilkan OTP
+        console.log(`[LIBRA REGISTRATION SIMULATION] Kode verifikasi untuk ${userEmail} adalah: ${otpCode}`);
+        alert(`SIMULASI: Kode OTP telah dikirim ke email ${userEmail}. Cek console log (F12) atau gunakan kode: ${otpCode}`);
+        
+        // 4. Update UI dan Lanjut ke Step 2
+        if (otpInfoEl) otpInfoEl.textContent = `Kode OTP telah dikirim ke email: ${userEmail}.`;
+
         document.getElementById('step1').style.display = 'none';
         document.getElementById('step2').style.display = 'block';
-    });
 
-    form2.addEventListener('submit', async (e) => { 
+        // 5. Mulai hitungan mundur tombol Kirim Ulang
+        startResendCountdown(btnResendOtp);
+    });
+    
+    // --- LOGIC RESEND OTP BUTTON ---
+    btnResendOtp.addEventListener('click', (e) => {
         e.preventDefault();
         const tempRegData = JSON.parse(sessionStorage.getItem('tempRegData'));
-        const username = form2.username.value;
-        const password = form2.password.value;
-        const confirmPassword = form2.confirm_password.value;
+        if (!tempRegData) {
+            alert('Terjadi kesalahan data. Silakan ulangi dari Langkah 1.');
+            document.getElementById('step2').style.display = 'none';
+            document.getElementById('step1').style.display = 'block';
+            // Pastikan timer berhenti jika kembali ke step 1
+            if (otpCountdownTimer) clearInterval(otpCountdownTimer); 
+            return;
+        }
 
+        // 1. Generate OTP baru
+        const newOtpCode = generateOTP();
+        tempRegData.otp = newOtpCode;
+        sessionStorage.setItem('tempRegData', JSON.stringify(tempRegData));
+
+        // 2. SIMULASI: Tampilkan OTP baru
+        console.log(`[LIBRA REGISTRATION SIMULATION] Kode OTP BARU untuk ${tempRegData.email} adalah: ${newOtpCode}`);
+        alert(`SIMULASI: Kode OTP baru telah dikirim ke email ${tempRegData.email}. Cek console log (F12) atau gunakan kode: ${newOtpCode}`);
+
+        // 3. Reset countdown dan kosongkan field
+        startResendCountdown(btnResendOtp);
+        document.getElementById('otp_code').value = ''; 
+    });
+
+
+    // --- LOGIC STEP 2: OTP Verification ---
+    form2.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const enteredOTP = form2.otp_code.value.trim();
+        const tempRegData = JSON.parse(sessionStorage.getItem('tempRegData'));
+        
+        if (!tempRegData) {
+            alert('Sesi pendaftaran habis atau bermasalah. Silakan ulangi dari Langkah 1.');
+            document.getElementById('step2').style.display = 'none';
+            document.getElementById('step1').style.display = 'block';
+            return;
+        }
+        
+        // Cek OTP
+        if (enteredOTP === tempRegData.otp) {
+            // Sukses! Lanjut ke Step 3
+            document.getElementById('step2').style.display = 'none';
+            document.getElementById('step3').style.display = 'block';
+            // Hentikan timer countdown
+            if (otpCountdownTimer) clearInterval(otpCountdownTimer);
+        } else {
+            alert('Kode OTP salah. Silakan coba lagi.');
+            form2.otp_code.value = '';
+        }
+    });
+
+
+    // --- LOGIC STEP 3: Final Registration (OLD STEP 2) ---
+    form3.addEventListener('submit', async (e) => { 
+        e.preventDefault();
+        const tempRegData = JSON.parse(sessionStorage.getItem('tempRegData'));
+        const username = form3.username.value; 
+        const password = form3.password.value; 
+        const confirmPassword = form3.confirm_password.value; 
+        
         if (password !== confirmPassword) {
             alert('Konfirmasi password tidak cocok!');
+            return;
+        }
+
+        if (!tempRegData) {
+            alert('Sesi pendaftaran habis atau bermasalah. Silakan ulangi dari Langkah 1.');
+            window.location.reload();
             return;
         }
         
         try {
             const data = await getAllData();
+            // Cek ketersediaan username
             if (data.users.some(u => u.username === username)) {
                 alert('Username sudah digunakan!');
                 return;
             }
 
+            // Hapus OTP dari data sebelum disimpan ke database
+            delete tempRegData.otp;
+
             const newUser = {
                 ...tempRegData,
-                id: Date.now(), 
+                id: Date.now(),
                 username,
                 password,
                 role: 'user',
             };
-            
+
+            // Simpan data ke Firebase
             data.users.push(newUser);
-            
             await setDatabaseData('users', data.users);
-            sessionStorage.removeItem('tempRegData');
             
-            alert('Pendaftaran Berhasil! Silakan Login.');
+            sessionStorage.removeItem('tempRegData');
+            alert('Pendaftaran Berhasil! Akun Anda sudah terverifikasi. Silakan Login.');
             window.location.href = 'login.html';
+
         } catch (error) {
             alert(error.message || 'Gagal mendaftar. Cek koneksi Anda.');
         }
     });
 }
+// ... (Sisa dari script.js Anda) ...
 
 // --- FUNGSI RENDER BUKU DAN PENCARIAN (Logika Gabungan Filter & Search) ---
 async function renderBookList(page, filter = {}) { 
