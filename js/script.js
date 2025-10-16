@@ -711,7 +711,25 @@ async function checkOverdueTransactions() { /* ... (Fungsi ini tetap sama) ... *
     }
 }
 
-// ... (Bagian atas file script.js Anda, termasuk konfigurasi, variabel global, dan fungsi CRUD Firebase) ...
+// --- UTILITY UNTUK LOADING OVERLAY (DIPAKAI DI LOGIN) ---
+function showLoading(message = 'Memproses...') {
+    const loadingEl = document.getElementById('loading-overlay');
+    if (loadingEl) {
+        const textEl = loadingEl.querySelector('.loading-text');
+        if (textEl) {
+            textEl.textContent = message;
+        }
+        loadingEl.style.display = 'flex'; // Tampilkan overlay
+    }
+}
+
+function hideLoading() {
+    const loadingEl = document.getElementById('loading-overlay');
+    if (loadingEl) {
+        loadingEl.style.display = 'none'; // Sembunyikan overlay
+    }
+}
+// ------------------------------------------------------------------------------------------
 
 // =========================================================================================
 // === OTP SIMULATION FUNCTIONS (START) ====================================================
@@ -735,8 +753,7 @@ function generateOTP() {
 function startResendCountdown(buttonEl) {
     let timeLeft = 120; // 120 seconds
     buttonEl.disabled = true;
-    buttonEl.classList.add('disabled'); // Tambahkan kelas untuk styling
-
+    
     // Hapus timer sebelumnya jika ada
     if (otpCountdownTimer) clearInterval(otpCountdownTimer); 
 
@@ -748,7 +765,6 @@ function startResendCountdown(buttonEl) {
             clearInterval(otpCountdownTimer);
             buttonEl.textContent = 'Kirim Ulang Kode';
             buttonEl.disabled = false;
-            buttonEl.classList.remove('disabled'); // Hapus kelas styling
         }
     };
 
@@ -756,13 +772,58 @@ function startResendCountdown(buttonEl) {
     otpCountdownTimer = setInterval(updateButtonText, 1000);
 }
 
-
 // =========================================================================================
-// === FUNGSI AUTHENTIKASI (LOGIN & DAFTAR) - MODIFIED ======================================
+// === FUNGSI AUTHENTIKASI (LOGIN & DAFTAR) - VERSI FINAL ==================================
 // =========================================================================================
 
-// ... (Pastikan function handleLogin() tetap ada di atas atau di bawahnya jika Anda memilikinya) ...
+/**
+ * Menangani logika login. Menggunakan loading overlay, notifikasi, dan pengalihan langsung.
+ */
+function handleLogin() {
+    const form = document.getElementById('login-form');
+    if (!form) return;
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = form.username.value;
+        const password = form.password.value;
+        
+        // 1. Tampilkan loading overlay segera
+        showLoading('Memverifikasi akun...'); 
 
+        try {
+            // 2. Kita tunggu minimal 1.5 detik agar loading spinner sempat terlihat,
+            //    terutama jika koneksi cepat (simulasi sinyal jelek)
+            const [data] = await Promise.all([
+                getAllData(),
+                new Promise(resolve => setTimeout(resolve, 1500)) // Jeda minimum 1.5 detik
+            ]);
+            
+            const user = data.users.find(u => u.username === username && u.password === password);
+            
+            if (user) {
+                setLoggedInUser(user);
+                
+                // 3. Notifikasi Sukses: Ubah teks loading menjadi pesan sukses
+                showLoading(`Login sukses! Selamat datang, ${user.name}.`);
+                
+                // **Tambahkan jeda singkat (500ms) agar pesan sukses terbaca**
+                await new Promise(resolve => setTimeout(resolve, 500)); 
+
+                // 4. Pengalihan halaman
+                window.location.href = user.role === 'admin' ? 'admin.html' : 'index.html';
+                
+            } else {
+                // 5. Jika gagal, sembunyikan loading dan tampilkan alert error
+                hideLoading();
+                alert('Username atau Password salah! (Coba: admin/admin atau user1/user1)');
+            }
+        } catch (error) {
+            // 6. Jika error, sembunyikan loading dan tampilkan alert error
+            hideLoading();
+            alert(error.message || 'Gagal login. Terjadi masalah koneksi ke database.');
+        }
+    });
+}
 function handleRegistration() { 
     // Mengambil semua form (Langkah 1, 2, dan 3 yang baru)
     const form1 = document.getElementById('registration-step1');
@@ -847,8 +908,6 @@ function handleRegistration() {
             alert('Terjadi kesalahan data. Silakan ulangi dari Langkah 1.');
             document.getElementById('step2').style.display = 'none';
             document.getElementById('step1').style.display = 'block';
-            // Pastikan timer berhenti jika kembali ke step 1
-            if (otpCountdownTimer) clearInterval(otpCountdownTimer); 
             return;
         }
 
@@ -945,7 +1004,6 @@ function handleRegistration() {
         }
     });
 }
-// ... (Sisa dari script.js Anda) ...
 
 // --- FUNGSI RENDER BUKU DAN PENCARIAN (Logika Gabungan Filter & Search) ---
 async function renderBookList(page, filter = {}) { 
